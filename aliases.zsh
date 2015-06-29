@@ -123,6 +123,10 @@ alias gt='git t'
 alias gbg='git bisect good'
 alias gbb='git bisect bad'
 
+# Custom Git functions
+alias gpso='git push origin'
+alias gpf='git push --force'
+
 # Common shell functions
 alias less='less -r'
 alias tf='tail -f'
