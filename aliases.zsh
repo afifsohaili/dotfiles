@@ -126,6 +126,7 @@ alias gbb='git bisect bad'
 # Custom Git functions
 alias gpso='git push origin'
 alias gpf='git push --force'
+alias gcpk='git cherry-pick'
 
 # Common shell functions
 alias less='less -r'
