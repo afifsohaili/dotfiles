@@ -1,2 +1,1 @@
-for booster_file (./booster/*.zsh) source $booster_file
-
+for config_file ($HOME/.yadr/zsh/booster/*.zsh) source $config_file
