@@ -3,7 +3,6 @@ __git_files () {
     _wanted files expl 'local files' _files
 }
 
-alias current_branch='git symbolic-ref HEAD 2>/dev/null | cut -d"/" -f 3 '
 alias css_files_changed="git diff --name-status master | grep \"^[A|M].*css\" | cut -f2 -d$'\t'"
 alias files_changed="git diff --name-status master | grep \"^[A|M]\" | cut -f2 -d$'\t'"
 
