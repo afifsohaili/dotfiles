@@ -28,7 +28,7 @@ function booster_pull() {
     fi
     git checkout --quiet master
     git branch --quiet old_master
-    git pull --rebase --prune --quiet origin master
+    git pull --rebase --prune --quiet
     if git diff old_master master | grep 'Gemfile.lock' &> /dev/null; then
       echo $red"There are gem updates. Running bundle install in the background."
       bundle install >/dev/null 2>/dev/null &
