@@ -41,4 +41,5 @@ function booster_pull() {
   done
 
   cd "$booster_path/fulcrum"
+  git rebase --onto master local
 }
