@@ -44,7 +44,7 @@ function production_queue {
 function staging_verify {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack "booster-notifications" "cibot train booster_$app""staging verify"
+  slack "booster-notifications" "cibot train booster_$app""_staging verify"
 }
 
 function production_verify {
