@@ -7,6 +7,10 @@ function killrails {
   ps -ef | grep subcontract | grep -v grep | awk '{print $2}' | xargs kill -9;
 }
 
+function killrspec {
+  ps -ef | grep rspec | grep -v grep | awk '{print $2}' | xargs kill -9;
+}
+
 function booster_deploy() {
   [ -s "$HOME/.rvm/scripts/rvm" ] && . "$HOME/.rvm/scripts/rvm";
 
