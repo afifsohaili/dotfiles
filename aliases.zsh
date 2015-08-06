@@ -174,6 +174,8 @@ alias sr='spring rspec'
 alias src='spring rails c'
 alias srgm='spring rails g migration'
 alias srdm='spring rake db:migrate'
+alias srdr='spring rake db:rollback'
+alias srdms='spring rake db:migrate:status'
 alias srdt='spring rake db:migrate'
 alias srdmt='spring rake db:migrate db:test:prepare'
 

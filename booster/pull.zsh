@@ -40,6 +40,14 @@ function booster_pull() {
     git branch -D --quiet old_master
   done
 
+  cd $booster_path"/cas_server"
+  echo $green"On cas_server...rebasing local branch with master"
+  git checkout local
+  git rebase master
+
   cd "$booster_path/fulcrum"
-  git rebase --onto master local
+  echo $green"On fulcrum...rebasing local branch with master"
+  git checkout local
+  git rebase master
+  git checkout master
 }
