@@ -9,3 +9,5 @@ tmux send-keys -t Booster:3 "cd ~/Booster/dev_proxy" C-m
 tmux send-keys -t Booster:3 "booster_start"
 tmux new-window -n yadr
 tmux send-keys -t Booster:4 "cd ~/.yadr/zsh" C-m
+tmux new-window -n deployments
+tmux send-keys -t Booster:5 "cd ~/Booster/autotomy" C-m
