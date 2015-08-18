@@ -32,19 +32,27 @@ function slack {
 function staging_queue {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack cibot "train booster_$app""_staging add $current_branch"
+  description=$current_branch
+  if [ -n "$2" ]; then
+    description="$2"
+  fi
+  slack cibot "train booster_$app""_staging$1 add $description"
 }
 
 function production_queue {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack cibot "train booster_$app"" add $current_branch"
+  description=$current_branch
+  if [ -n "$1" ]; then
+    description="$1"
+  fi
+  slack cibot "train booster_$app"" add $description"
 }
 
 function staging_verify {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack "booster-notifications" "cibot train booster_$app""_staging verify"
+  slack "booster-notifications" "cibot train booster_$app""_staging$1"" verify"
 }
 
 function production_verify {
