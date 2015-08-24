@@ -33,10 +33,14 @@ function staging_queue {
   current_branch=`current_branch`
   app=`capistrano_app_name`
   description=$current_branch
+  staging=$1
   if [ -n "$2" ]; then
     description="$2"
   fi
-  slack cibot "train booster_$app""_staging$1 add $description"
+  if [ "$1" = "1" ]; then
+    staging=" "
+  fi
+  slack cibot "train booster_$app""_staging$staging"" add $description"
 }
 
 function production_queue {
