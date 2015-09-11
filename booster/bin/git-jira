@@ -3,8 +3,8 @@
 function __get_branch_from_ticket_number() {
   git branch -a | cut -d" " -f 3 | grep "$1" | cut -d"/" -f 3 | sed -n '1p'
 }
-if [ "$1" == "--output" ]; then
-  echo `__get_branch_from_ticket_number $2`
+if [ "$1" == "--output" ] || [ "$1" == "-o" ]; then
+  echo `__get_branch_from_ticket_number "$2"`
 else
-  git checkout `__get_branch_from_ticket_number "$2"`
+  git checkout `__get_branch_from_ticket_number "$1"`
 fi
