@@ -10,8 +10,7 @@ function booster_pull() {
   booster_path=/Users/afifsohaili/Booster
 
   booster_apps=(
-    admin autotomy backend donation user_service
-    cas_server fulcrum dev_proxy styleguide
+    autotomy fulcrum dev_proxy
   )
 
   for app in "${booster_apps[@]}"
@@ -39,15 +38,4 @@ function booster_pull() {
     fi
     git branch -D --quiet old_master
   done
-
-  cd $booster_path"/cas_server"
-  echo $green"On cas_server...rebasing local branch with master"
-  git checkout local
-  git rebase master
-
-  cd "$booster_path/fulcrum"
-  echo $green"On fulcrum...rebasing local branch with master"
-  git checkout local
-  git rebase master
-  git checkout master
 }
