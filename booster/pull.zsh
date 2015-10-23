@@ -38,4 +38,5 @@ function booster_pull() {
     fi
     git branch -D --quiet old_master
   done
+  cd $booster_path"/fulcrum"
 }
