@@ -10,7 +10,7 @@ function booster_pull() {
   booster_path=/Users/afifsohaili/Booster
 
   booster_apps=(
-    autotomy fulcrum dev_proxy
+    autotomy fulcrum dev_proxy integration_test
   )
 
   for app in "${booster_apps[@]}"
