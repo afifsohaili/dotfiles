@@ -67,7 +67,6 @@ alias ve='vim ~/.vimrc'
 
 # zsh profile editing
 alias ze='vim ~/.zshrc'
-alias zr='source ~/.zshrc'
 
 # Git Aliases
 alias gs='git status'
@@ -128,6 +127,7 @@ alias gsmu='git submodule update'
 alias gt='git t'
 alias gbg='git bisect good'
 alias gbb='git bisect bad'
+alias gdmb='git branch --merged | grep -v "\*" | xargs -n 1 git branch -d'
 
 # Custom Git functions
 alias gpso='git push origin'
@@ -178,6 +178,11 @@ alias rdmr='rake db:migrate:redo'
 # Zeus
 alias zs='zeus server'
 alias zc='zeus console'
+alias zr='zeus rspec'
+alias zrc='zeus rails c'
+alias zrs='zeus rails s'
+alias zrdbm='zeus rake db:migrate'
+alias zrdbtp='zeus rake db:test:prepare'
 
 # Rspec
 alias rs='rspec spec'
@@ -189,6 +194,7 @@ alias srdr='spring rake db:rollback'
 alias srdms='spring rake db:migrate:status'
 alias srdt='spring rake db:migrate'
 alias srdmt='spring rake db:migrate db:test:prepare'
+
 
 # Sprintly - https://github.com/nextbigsoundinc/Sprintly-GitHub
 alias sp='sprintly'
