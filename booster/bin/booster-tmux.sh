@@ -4,10 +4,11 @@ tmux new -d -s Booster -n fulcrum
 tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
 tmux split-window -v
 tmux select-pane -t 2
+tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
 tmux split-window -h
-tmux send-keys -t "cd ~/Booster/fulcrum" C-m
+tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
 tmux split-window -h
-tmux send-keys -t "cd ~/Booster/fulcrum" C-m
+tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
 tmux new-window -n yadr
 tmux send-keys -t Booster:2 "cd ~/.yadr/zsh" C-m
 tmux new-window -n integration_test

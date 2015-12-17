@@ -8,7 +8,7 @@ tmux split-window -v
 tmux select-pane -t 3
 tmux send-keys "cd ~/Projects/meteor/projekihsan" C-m
 tmux new-window -n deployment
-tmux send-keys -t ProjekIhsan:2 "cd ~/Projects/meteor/projekihsan/.deploy" C-m
+tmux send-keys -t ProjekIhsan:2 "cd ~/Projects/meteor/projekihsan/.production" C-m
 tmux select-window -t 1
 tmux select-pane -t 1
 tmux send-keys "cd ~/Projects/meteor/projekihsan" C-m
