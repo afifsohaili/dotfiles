@@ -134,6 +134,7 @@ alias gpso='git push origin'
 alias gpf='git push --force'
 alias gcpk='git cherry-pick'
 alias gjr='git jira'
+alias gjro='git jira -o'
 
 # Common shell functions
 alias less='less -r'
