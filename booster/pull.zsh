@@ -40,3 +40,5 @@ function booster_pull() {
   done
   cd $booster_path"/fulcrum"
 }
+
+alias bp=booster_pull

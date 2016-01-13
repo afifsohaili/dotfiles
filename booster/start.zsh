@@ -1,6 +1,8 @@
 function booster_start {
   killrails;
-  cd ~/Booster/dev_proxy/;
+  cd ~/Booster/fulcrum/;
   echo -n -e "\033]0;rails_servers\007";
-  ./bin/start;
+  bundle exec spring rails s -p 3000;
 }
+
+alias bs=booster_start
