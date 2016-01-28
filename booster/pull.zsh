@@ -35,6 +35,7 @@ function booster_pull() {
     if git diff old_master master | grep 'db/migrate/' &> /dev/null; then
       echo $red"New migration(s) found. Running rake db:migrate in the background."
       bundle exec rake db:migrate >/dev/null 2>/dev/null &
+      bundle exec rake db:setup RAILS_ENV=test >/dev/null 2>/dev/null &
     fi
     git branch -D --quiet old_master
   done
