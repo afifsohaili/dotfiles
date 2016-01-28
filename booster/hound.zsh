@@ -10,4 +10,4 @@ function hound_check() {
   done
 }
 
-
+alias hc=hound_check

@@ -52,4 +52,4 @@ function booster_merge {
   fi
 }
 
-
+alias bm=booster_merge
