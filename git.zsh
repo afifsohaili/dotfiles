@@ -32,3 +32,5 @@ function new_branch() {
   echo "\033[0;32mCreating branch $branch on remote repo..."
   git push origin -u --quiet $branch &
 }
+
+alias gpr="hub pull-request -o"
