@@ -52,6 +52,7 @@ function production_queue {
   fi
   slack cibot "train booster_$app"" add $description"
 }
+alias pq="production_queue"
 
 function staging_verify {
   current_branch=`current_branch`
@@ -64,3 +65,4 @@ function production_verify {
   app=`capistrano_app_name`
   slack "booster-notifications" "cibot train booster_$app"" verify"
 }
+alias pv="production_verify"
