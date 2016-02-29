@@ -217,3 +217,6 @@ alias dbmu='spring rake db:migrate:up'
 
 # Homebrew
 alias brewu='brew update  && brew upgrade --all && brew cleanup && brew prune && brew doctor'
+
+# Ngrok
+alias ng=~/Downloads/ngrok
