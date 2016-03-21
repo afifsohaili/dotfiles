@@ -135,6 +135,8 @@ alias gpf='git push --force'
 alias gcpk='git cherry-pick'
 alias gjr='git jira'
 alias gjro='git jira -o'
+alias grom='git rebase origin/master'
+alias gfrs='git fetch && git reset --hard origin/master'
 
 # Common shell functions
 alias less='less -r'
@@ -202,7 +204,6 @@ alias sp='sprintly'
 # spb = sprintly branch - create a branch automatically based on the bug you're working on
 alias spb="git checkout -b \`sp | tail -2 | grep '#' | sed 's/^ //' | sed 's/[^A-Za-z0-9 ]//g' | sed 's/ /-/g' | cut -d"-" -f1,2,3,4,5\`"
 
-alias hpr='hub pull-request'
 alias grb='git recent-branches'
 
 # Finder
@@ -214,6 +215,7 @@ alias dbm='spring rake db:migrate'
 alias dbmr='spring rake db:migrate:redo'
 alias dbmd='spring rake db:migrate:down'
 alias dbmu='spring rake db:migrate:up'
+alias dbms='spring rake db:migrate:status'
 
 # Homebrew
 alias brewu='brew update  && brew upgrade --all && brew cleanup && brew prune && brew doctor'
