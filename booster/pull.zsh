@@ -39,6 +39,9 @@ function booster_pull() {
     fi
     git branch -D --quiet old_master
   done
+  cd $booster_path"/integration_test"
+  git checkout --quiet as-custom
+  git rebase --quiet origin/master
   cd $booster_path"/fulcrum"
 }
 
