@@ -42,6 +42,7 @@ function staging_queue {
   fi
   slack cibot "train booster_$app""_staging$staging"" add $description"
 }
+alias sq="staging_queue"
 
 function production_queue {
   current_branch=`current_branch`
