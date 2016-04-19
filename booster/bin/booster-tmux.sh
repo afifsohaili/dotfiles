@@ -9,6 +9,8 @@ tmux split-window -h
 tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
 tmux split-window -h
 tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
+tmux select-layout main-horizontal
 tmux new-window -n deployments
 tmux send-keys -t Booster:2 "cd ~/Booster/autotomy" C-m
+tmux switch-window -t Booster:1
 tmux at -t Booster
