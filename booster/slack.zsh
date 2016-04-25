@@ -58,8 +58,17 @@ alias pq="production_queue"
 function staging_verify {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack "booster-notifications" "cibot train booster_$app""_staging$1"" verify"
+  description=$current_branch
+  staging=$1
+  if [ -n "$2" ]; then
+    description="$2"
+  fi
+  if [ "$1" = "1" ]; then
+    staging=" "
+  fi
+  slack cibot "train booster_$app""_staging$staging"" verify $description"
 }
+alias sv="staging_verify"
 
 function production_verify {
   current_branch=`current_branch`
