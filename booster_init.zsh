@@ -1,1 +1,1 @@
-for config_file ($HOME/.yadr/zsh/booster/*.zsh) source $config_file
+for config_file ($HOME/dotfiles/booster/*.zsh) source $config_file
