@@ -1,0 +1,26 @@
+snippet onC
+	template.onCreated(function() {
+		${0}
+	});
+
+snippet onR
+	template.onRendered(function() {
+		${0}
+	});
+
+snippet template
+	const template = Template.${0}
+
+snippet helpers
+	template.helpers({
+		${0}() {
+		}
+	});
+
+snippet subs
+	this.autorun(() => {
+		this.subscribe(${0});
+	});
+
+snippet 18
+	TAPi18n.__("${0}")
