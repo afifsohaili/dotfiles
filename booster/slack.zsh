@@ -18,17 +18,6 @@ function containsElement() {
   echo 1
 }
 
-function slack {
-  slack_channels=(
-    "booster-notifications" "booster-staging-train" "klfunroom"
-  )
-  if [ `containsElement "$1" "${slack_channels[@]}"` = 0 ]; then
-    echo $2 | slackcat -c $1 -p
-  else
-    echo $2 | slackcat -u $1 -p
-  fi
-}
-
 function staging_queue {
   current_branch=`current_branch`
   app=`capistrano_app_name`
@@ -40,7 +29,7 @@ function staging_queue {
   if [ "$1" = "1" ]; then
     staging=" "
   fi
-  slack cibot "train booster_$app""_staging$staging"" add $description"
+  slack chat send "train booster_$app""_staging$staging"" add $description" @cibot
 }
 alias sq="staging_queue"
 
@@ -51,7 +40,7 @@ function production_queue {
   if [ -n "$1" ]; then
     description="$1"
   fi
-  slack cibot "train booster_$app"" add $description"
+  slack chat send "train booster_$app"" add $description" @cibot
 }
 alias pq="production_queue"
 
@@ -66,13 +55,13 @@ function staging_verify {
   if [ "$1" = "1" ]; then
     staging=" "
   fi
-  slack cibot "train booster_$app""_staging$staging"" verify $description"
+  slack chat send "cibot train booster_$app""_staging$staging"" verify $description" "#booster-staging-train"
 }
 alias sv="staging_verify"
 
 function production_verify {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack "booster-notifications" "cibot train booster_$app"" verify"
+  slack chat send "cibot train booster_$app"" verify" "#booster-notifications"
 }
 alias pv="production_verify"
