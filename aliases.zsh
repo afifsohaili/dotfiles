@@ -18,3 +18,10 @@ alias srs="spring rails s"
 # Meteor specific
 alias mts="meteor npm start"
 alias mtd="meteor npm run deploy"
+
+alias bsr="brew services restart"
+
+# Yarn
+alias ya="yarn add"
+alias yr="yarn remove"
+alias yad="yarn add -D"

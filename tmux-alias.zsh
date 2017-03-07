@@ -1,1 +1,1 @@
-alias tat='tmux at -t'
+alias tat='tmux at -d -t'
