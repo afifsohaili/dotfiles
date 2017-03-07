@@ -40,7 +40,7 @@ function booster_pull() {
     git branch -D --quiet old_master
   done
   cd $booster_path"/integration_test"
-  git checkout --quiet as-custom
+  git checkout --quiet as-customized-script
   git rebase --quiet origin/master
   cd $booster_path"/fulcrum"
 }
