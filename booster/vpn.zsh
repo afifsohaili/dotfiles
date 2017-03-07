@@ -1,15 +1,11 @@
 function vup () {
-  if [[ -n $1 ]]
-  then
-    if [ "$DEBUG" = "1" ]; then
-      printf "mafif\n$VPN_CREDENTIAL\ny" | /opt/cisco/anyconnect/bin/vpn -s connect ci$1.out.customink.com
-    else
-      printf "mafif\n$VPN_CREDENTIAL\ny" | /opt/cisco/anyconnect/bin/vpn -s connect ci$1.out.customink.com | grep state
-    fi
+  if [ "$DEBUG" = "1" ]; then
+    printf "2\nmafif\n$VPN_CREDENTIAL\ny" | /opt/cisco/anyconnect/bin/vpn -s connect vpn.out.customink.com
   else
-    print "Missing server location"
+    printf "2\nmafif\n$VPN_CREDENTIAL\ny" | /opt/cisco/anyconnect/bin/vpn -s connect vpn.out.customink.com | grep state
   fi
 }
+alias vpe="vup"
 
 function vdown () {
   /opt/cisco/anyconnect/bin/vpn disconnect
