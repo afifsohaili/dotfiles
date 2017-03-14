@@ -65,3 +65,9 @@ function production_verify {
   slack chat send "cibot train booster_$app"" verify" "#booster-notifications"
 }
 alias pv="production_verify"
+
+function production_remind() {
+  app=`capistrano_app_name`
+  slack chat send "cibot train booster_$app" "#booster-notifications"
+}
+alias pr="production_remind"
