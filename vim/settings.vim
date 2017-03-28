@@ -37,7 +37,8 @@ function! Multiple_cursors_after()
 endfunction
 
 let g:vtr_filetype_runner_overrides = {
-      \ 'ruby': 'RAILS_ENV=test rake db:migrate:redo > /dev/null 2>&1 && sr --fail-fast {file}',
+      \ 'ruby': 'sr --fail-fast {file}',
+      \ 'sql': 'spring rake db:migrate:redo',
       \ }
 
 set colorcolumn=80
