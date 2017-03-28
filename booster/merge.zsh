@@ -8,13 +8,6 @@ function booster_merge {
   if [ "${current_branch}" = "master" ]; then
     echo -e $red"You cannot merge master to master"
   else
-    git checkout --quiet master
-    echo -e "Pulling latest master"
-    git pull --rebase --quiet --prune origin master
-    git checkout --quiet $current_branch
-
-    echo -e "Rebasing $current_branch with latest master"
-
     if git rebase master | grep 'conflict' &> /dev/null; then
       git rebase --abort
       echo -e $red"There are merge conflicts with master"
