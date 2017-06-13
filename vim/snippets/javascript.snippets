@@ -17,6 +17,12 @@ snippet helpers
 		}
 	});
 
+snippet events
+	template.events({
+		'${0}'() {
+		}
+	})
+
 snippet subs
 	this.autorun(() => {
 		this.subscribe(${0});
@@ -30,3 +36,37 @@ snippet log
 
 snippet imp
 	import { ${1} } from "${0}";
+
+snippet impm
+	import { Meteor } from 'meteor/meteor'
+
+snippet konacha
+	//= require spec_helper
+
+	describe("${1}", function() {
+	  ${0}
+	})
+
+snippet it "it block for mocha"
+	it('${1}', function() {
+	  ${0}
+	})
+
+snippet describe "describe block for mocha"
+	describe('${1}', function() {
+	  ${0}
+	})
+
+snippet moment "import moment"
+	import moment from 'moment'
+
+snippet sleep "Meteor sleep"
+	Meteor._sleepForMs(2000)
+
+snippet factory
+	import faker from 'faker'
+	import ${2} from '${3}'
+
+	Factory.define('${1}', ${2}, {
+		${0}
+	})
