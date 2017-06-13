@@ -7,6 +7,7 @@ alias gjro='git jira -o'
 alias grom='git rebase origin/master'
 alias gfrs='git fetch && git reset --hard origin/master'
 alias gpr="hub pull-request -o"
+alias gfrb='git fetch --rebase'
 
 # General aliases
 alias css_files_changed="git diff --name-status master | grep \"^[A|M].*css\" | cut -f2 -d$'\t'"
@@ -25,3 +26,6 @@ alias bsr="brew services restart"
 alias ya="yarn add"
 alias yr="yarn remove"
 alias yad="yarn add -D"
+
+alias reload='source ~/.zshrc'
+alias vi='vim'
