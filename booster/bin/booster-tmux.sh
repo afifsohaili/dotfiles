@@ -1,6 +1,6 @@
 #!/bin/sh
 
-open /Applications/Slack.app
+  open /Applications/Slack.app
 tmux new -d -s Booster -n fulcrum
 tmux send-keys -t Booster:1 "cd ~/Booster/fulcrum" C-m
 tmux split-window -v

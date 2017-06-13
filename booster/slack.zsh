@@ -29,7 +29,9 @@ function staging_queue {
   if [ "$1" = "1" ]; then
     staging=" "
   fi
-  slack chat send "train booster_$app""_staging$staging"" add $description" @cibot
+  echo "cibot train booster_$app""_staging$staging"" add $description" | pbcopy
+
+  open /Applications/Slack.app
 }
 alias sq="staging_queue"
 
@@ -40,7 +42,9 @@ function production_queue {
   if [ -n "$1" ]; then
     description="$1"
   fi
-  slack chat send "train booster_$app"" add $description" @cibot
+  echo "cibot train booster_$app"" add $description" | pbcopy
+
+  open /Applications/Slack.app
 }
 alias pq="production_queue"
 
@@ -55,19 +59,25 @@ function staging_verify {
   if [ "$1" = "1" ]; then
     staging=" "
   fi
-  slack chat send "cibot train booster_$app""_staging$staging"" verify $description" "#booster-staging-train"
+  echo "cibot train booster_$app""_staging$staging"" verify $description" | pbcopy
+
+  open /Applications/Slack.app
 }
 alias sv="staging_verify"
 
 function production_verify {
   current_branch=`current_branch`
   app=`capistrano_app_name`
-  slack chat send "cibot train booster_$app"" verify" "#booster-notifications"
+  echo "cibot train booster_$app"" verify" | pbcopy
+
+  open /Applications/Slack.app
 }
 alias pv="production_verify"
 
 function production_remind() {
   app=`capistrano_app_name`
-  slack chat send "cibot train booster_$app" "#booster-notifications"
+  echo "cibot train booster_$app" | pbcopy
+
+  open /Applications/Slack.app
 }
 alias pr="production_remind"

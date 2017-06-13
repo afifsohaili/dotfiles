@@ -12,9 +12,10 @@ function booster_merge {
       git rebase --abort
       echo -e $red"There are merge conflicts with master"
     else
+      git fetch
       git push --force-with-lease --quiet origin $current_branch
 
-      number_of_commits=$(git log HEAD...master --pretty=oneline | wc -l)
+      number_of_commits=$(git log HEAD...origin/master --pretty=oneline | wc -l)
       if [ "$number_of_commits" -gt 1 ]; then
         echo $red"You have multiple commit messages. It's advisable to squash all commits into just one."
         echo $red"Do you still want to continue merging? (Y/N)"
