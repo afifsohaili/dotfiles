@@ -17,6 +17,10 @@ call vundle#rc()
 " let Vundle manage Vundle (required)
 Bundle "gmarik/vundle"
 
+" load vimrc per projects
+" https://github.com/embear/vim-localvimrc
+Bundle "embear/vim-localvimrc"
+
 " YADR's vundles are split up by category into smaller files
 " This reduces churn and makes it easier to fork. See
 " ~/.vim/vundles/ to edit them:
