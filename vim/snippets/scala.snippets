@@ -1,0 +1,52 @@
+snippet form "Import Forms"
+	import play.api.data._
+	import play.api.data.Forms._
+
+	${1}
+
+snippet playmodel "Play model"
+	package $1
+
+	import play.api.data._
+	import play.api.data.Forms._
+
+	case class ${1:Model}(
+	  id: Long,
+		${2: title: String}
+	)
+
+	object $1Form{
+	  val form = Form(
+		  mapping(
+				${3:"title" -> nonEmptyText,}
+			)($1.apply)($1.unapply)
+		)
+	}
+
+	object $1s {
+	  var $1s: Seq[$1] = Seq()
+	}
+
+snippet playcontroller "Play controller"
+	package ${1:model}
+
+	import javax.inject.Inject
+	import play.api.mvc._
+
+	import scala.concurrent._
+
+	class ${2:Model}Controller extends Controller {
+		def index: Action[AnyContent] = {
+			Action { implicit request =>
+				val response: Result = Ok("hello world")
+				response
+			}
+		}
+
+		def asyncIndex: Action[AnyContent] = {
+			Action.async { implicit request =>
+				val response: Future[Result] = Future.successful(Ok("hello world"))
+				response
+			}
+		}
+	}
