@@ -41,3 +41,6 @@ endif
 
 "Filetype plugin indent on is required by vundle
 filetype plugin indent on
+
+let g:localvimrc_whitelist='/Users/afifsohaili/.*/.lvimrc'
+let g:localvimrc_sandbox=0
