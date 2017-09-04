@@ -1,12 +1,12 @@
 snippet onC
 	template.onCreated(function() {
 		${0}
-	});
+	})
 
 snippet onR
 	template.onRendered(function() {
 		${0}
-	});
+	})
 
 snippet template
 	const template = Template.${0}
@@ -15,7 +15,7 @@ snippet helpers
 	template.helpers({
 		${0}() {
 		}
-	});
+	})
 
 snippet events
 	template.events({
@@ -25,17 +25,17 @@ snippet events
 
 snippet subs
 	this.autorun(() => {
-		this.subscribe(${0});
-	});
+		this.subscribe(${0})
+	})
 
 snippet 18
-	TAPi18n.__("${0}");
+	TAPi18n.__("${0}")
 
 snippet log
-	console.log(${0});
+	console.log(${0})
 
-snippet imp
-	import { ${1} } from "${0}";
+snippet im
+	import { ${1} } from '${0}'
 
 snippet impm
 	import { Meteor } from 'meteor/meteor'
@@ -70,3 +70,16 @@ snippet factory
 	Factory.define('${1}', ${2}, {
 		${0}
 	})
+
+snippet fb
+	Factory.build('${0}')
+
+snippet mocha
+	import { resetDatabase } from 'meteor/xolvio:cleaner';
+	import chai from 'chai'
+	import chaiChange from 'chai-change'
+
+	if (Meteor.isClient) return
+
+	chai.use(chaiChange)
+	const expect = chai.expect
