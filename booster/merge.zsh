@@ -18,7 +18,8 @@ function booster_merge {
       number_of_commits=$(git log HEAD...origin/master --pretty=oneline | wc -l)
       if [ "$number_of_commits" -gt 1 ]; then
         echo $red"You have multiple commit messages. It's advisable to squash all commits into just one."
-        echo $red"Do you still want to continue merging? (Y/N)"
+        echo $red"\n$(git log HEAD...origin/master --pretty=oneline | cut -d' ' -f2-)\n"
+        echo "Do you still want to continue merging? (Y/N)"
         read mergeable
       fi
 
