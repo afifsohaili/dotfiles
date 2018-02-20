@@ -29,7 +29,7 @@ snippet subs
 	})
 
 snippet 18
-	TAPi18n.__("${0}")
+	TAPi18n.__('${0}')
 
 snippet log
 	console.log(${0})
@@ -44,11 +44,6 @@ snippet konacha
 	//= require spec_helper
 
 	describe("${1}", function() {
-	  ${0}
-	})
-
-snippet it "it block for mocha"
-	it('${1}', function() {
 	  ${0}
 	})
 
@@ -75,7 +70,7 @@ snippet fb
 	Factory.build('${0}')
 
 snippet mocha
-	import { resetDatabase } from 'meteor/xolvio:cleaner';
+	import { resetDatabase } from 'meteor/xolvio:cleaner'
 	import chai from 'chai'
 	import chaiChange from 'chai-change'
 
