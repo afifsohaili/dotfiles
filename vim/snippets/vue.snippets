@@ -1,0 +1,17 @@
+snippet exportcomponent "export default with components"
+	<script>
+	import ${1:Components} from '~/components/$1'
+	
+	export default {
+		components: {
+			$1
+		}
+	}
+	</script>
+
+snippet export "export default"
+	<script>
+	export default {
+		${1}
+	}
+	</script>
