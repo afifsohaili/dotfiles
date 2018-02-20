@@ -84,3 +84,8 @@ endfunction
 source ~/dotfiles/vim/plugins.vim
 
 let g:vim_g_query_url = "http://www.google.com/search?ie=UTF-8&sourceid=navclient&gfns=1&q="
+
+let NERDTreeIgnore = ['^node_modules$']
+
+let g:vue_disable_pre_processors=1
+
