@@ -1,80 +1,133 @@
 snippet onC
-	template.onCreated(function() {
-		${0}
-	})
+template.onCreated(function() {
+	${0}
+})
+endsnippet
 
 snippet onR
-	template.onRendered(function() {
-		${0}
-	})
+template.onRendered(function() {
+	${0}
+})
+endsnippet
+
 
 snippet template
-	const template = Template.${0}
+const template = Template.${0}
+endsnippet
+
 
 snippet helpers
-	template.helpers({
-		${0}() {
-		}
-	})
+template.helpers({
+	${0}() {
+	}
+})
+endsnippet
+
 
 snippet events
-	template.events({
-		'${0}'() {
-		}
-	})
+template.events({
+	'${0}'() {
+	}
+})
+endsnippet
+
 
 snippet subs
-	this.autorun(() => {
-		this.subscribe(${0})
-	})
+this.autorun(() => {
+	this.subscribe(${0})
+})
+endsnippet
+
 
 snippet 18
-	TAPi18n.__('${0}')
+TAPi18n.__('${0}')
+endsnippet
+
 
 snippet log
-	console.log(${0})
+endsnippet
 
+console.log(${0})
 snippet im
-	import { ${1} } from '${0}'
+import { ${1} } from '${0}'
+endsnippet
+
 
 snippet impm
-	import { Meteor } from 'meteor/meteor'
+import { Meteor } from 'meteor/meteor'
+endsnippet
+
 
 snippet konacha
-	//= require spec_helper
+//= require spec_helper
 
-	describe("${1}", function() {
-	  ${0}
-	})
+describe("${1}", function() {
+  ${0}
+})
+endsnippet
+
 
 snippet describe "describe block for mocha"
-	describe('${1}', function() {
-	  ${0}
-	})
+describe('${1}', function() {
+  ${0}
+})
+endsnippet
+
 
 snippet moment "import moment"
-	import moment from 'moment'
+import moment from 'moment'
+endsnippet
+
 
 snippet sleep "Meteor sleep"
-	Meteor._sleepForMs(2000)
+Meteor._sleepForMs(2000)
+endsnippet
+
 
 snippet factory
-	import faker from 'faker'
-	import ${2} from '${3}'
+import faker from 'faker'
+import ${2} from '${3}'
 
-	Factory.define('${1}', ${2}, {
-		${0}
-	})
+Factory.define('${1}', ${2}, {
+	${0}
+})
+endsnippet
+
 
 snippet fb
-	Factory.build('${0}')
+Factory.build('${0}')
+endsnippet
+
 
 snippet mocha
-	import { resetDatabase } from 'meteor/xolvio:cleaner'
-	import chai from 'chai'
-	import chaiChange from 'chai-change'
+import { resetDatabase } from 'meteor/xolvio:cleaner'
+import chai from 'chai'
+import chaiChange from 'chai-change'
 
-	if (Meteor.isClient) return
+if (Meteor.isClient) return
 
-	chai.use(chaiChange)
-	const expect = chai.expect
+chai.use(chaiChange)
+const expect = chai.expect
+endsnippet
+
+
+snippet Chance
+import Chance from 'chance'
+
+const chance = new Chance();
+endsnippet
+
+
+snippet flo "Add flow"
+// @flow
+endsnippet
+
+
+snippet flow "Add flow" i
+// @flow
+endsnippet
+
+
+snippet "(\w+).par" "Parenthesis (postfix)" r
+(`!p snip.rv = match.group(1)`${0})${1}
+endsnippet
