@@ -7,3 +7,6 @@ let mapleader=","   " leader is comma
 " Split window remaps
 nnoremap vv <C-w>v
 nnoremap ss <C-w>s
+
+" Lazyredraw will not render every macro repetitions. Good for performance
+set lazyredraw
