@@ -10,7 +10,7 @@ set hlsearch        " highlight matche
 set ignorecase      " ignore case when searching
 set smartcase       " ignore case if search pattern is lower case
 		    " case-sensitive otherwise
-		    
+
 " clear search highlight with //
 nmap <silent> // :let @/=""<CR>
 
