@@ -1,0 +1,1 @@
+Plug 'ianks/vim-tsx'
