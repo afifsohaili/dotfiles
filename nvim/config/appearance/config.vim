@@ -24,3 +24,10 @@ hi ColorColumn guibg=#444444
 
 " Highlight extra whitespace better
 hi ExtraWhitespace ctermbg=160 guibg=#ff0000
+
+hi CursorLine guifg=Grey53 guibg=Grey0 gui=inverse
+hi CursorColumn guifg=Grey53 guibg=Grey0 gui=inverse
+
+" Mappings to toggle CursorLine and CursorColumn
+nmap cox :set cursorcolumn!<Bar>set cursorline!<CR>
+nmap ,r :so ~/.config/nvim/init.vim<CR>
