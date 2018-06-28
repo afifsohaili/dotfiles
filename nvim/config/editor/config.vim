@@ -14,7 +14,7 @@ set smartcase       " ignore case if search pattern is lower case
 " clear search highlight with //
 nmap <silent> // :let @/=""<CR>
 
-" Use ,w to strip trailing whitespaces
+" Use <leader>w to strip trailing whitespaces
 nmap <leader>w :StripWhitespace<CR>
 
 " Shortcut to set nopaste

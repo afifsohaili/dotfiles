@@ -30,4 +30,4 @@ hi CursorColumn guifg=Grey53 guibg=Grey0 gui=inverse
 
 " Mappings to toggle CursorLine and CursorColumn
 nmap cox :set cursorcolumn!<Bar>set cursorline!<CR>
-nmap ,r :so ~/.config/nvim/init.vim<CR>
+nmap <leader>r :so ~/.config/nvim/init.vim<CR>
