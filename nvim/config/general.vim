@@ -16,3 +16,10 @@ nmap <silent> <Left> :vertical resize +5<CR>
 nmap <silent> <Right> :vertical resize -5<CR>
 nmap <silent> <Up> :resize +5<CR>
 nmap <silent> <Down> :resize -5<CR>
+
+" Aliases on common typos
+command! Wqa execute "wqa"
+command! Wq execute "wq"
+
+" Replace word with what's in the clipboard
+nmap <leader>p "-diw<S-p>
