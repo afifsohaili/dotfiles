@@ -4,3 +4,4 @@ Plug 'jiangmiao/auto-pairs' " Autoclose matching pairs
 Plug 'ntpeters/vim-better-whitespace' " Strip whitespace
 Plug 'tpope/vim-commentary' " commenting support (gc)
 Plug 'tpope/vim-sleuth' " For heuristic indentation
+Plug 'kshenoy/vim-signature' " For more visibility on marks
