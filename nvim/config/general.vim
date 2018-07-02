@@ -23,3 +23,6 @@ command! Wq execute "wq"
 
 " Replace word with what's in the clipboard
 nmap <leader>p "-diw<S-p>
+
+" Reload all windows
+nmap <leader>e :windo e!<CR>
