@@ -9,7 +9,7 @@ nnoremap vv <C-w>v
 nnoremap ss <C-w>s
 
 " Lazyredraw will not render every macro repetitions. Good for performance
-set lazyredraw
+" set lazyredraw
 
 " Map arrow keys to resize splits
 nmap <silent> <Left> :vertical resize +5<CR>
