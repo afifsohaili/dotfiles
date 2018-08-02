@@ -1,0 +1,29 @@
+snippet custom "Refer to custom Serverless variables" i
+${self:custom.${0}}
+endsnippet
+
+snippet ! "Start Serverless"
+service:
+  name: ${self:custom.serviceName}
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: dev
+  region: ${3:ap-southeast-1}
+
+functions:
+  ${2:root}:
+    handler: handler.$2
+    events:
+      - http:
+          path: /
+          method: get
+  $0
+custom:
+  serviceName: ${1:Service Name}
+
+package:
+  exclude:
+    - node_modules/**
+endsnippet

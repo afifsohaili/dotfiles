@@ -1,0 +1,47 @@
+extends javascript
+
+snippet tsdisablenext "disable next line"
+// tslint:disable-next-line${0::rule}
+endsnippet
+
+snippet tsdisableline "disable line" i
+// tslint:disable-line${0::rule}
+endsnippet
+
+snippet $ "wrap in template string variable" i
+${${0:${VISUAL}}}
+endsnippet
+
+snippet jsonstr "JSON.stringify" i
+JSON.stringify(${0:${VISUAL}})
+endsnippet
+
+snippet try "description"
+try {
+  ${0:${VISUAL}}
+} catch (err) {
+  console.error('$1', err)
+}
+endsnippet
+
+snippet c "const"
+const $0
+endsnippet
+
+snippet l "let"
+let $0
+endsnippet
+
+snippet af "async function"
+async function () {
+  $0
+}
+endsnippet
+
+snippet (af "Add arrow function" i
+(${1} => ${2}
+endsnippet
+
+snippet (afd "Add arrow function" i
+(({${1:var}}) => $1
+endsnippet

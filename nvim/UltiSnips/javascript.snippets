@@ -1,0 +1,108 @@
+snippet log "console.log" i
+console.log('\n', '$1', ${1}$0);
+endsnippet
+
+snippet flo "Add flowtype"
+// @flow
+
+endsnippet
+
+snippet (af "Add arrow function" i
+(${1} => ${2}
+endsnippet
+
+snippet (afd "Add arrow function" i
+(({${1:var}}) => $1
+endsnippet
+
+snippet chance "Add chance to file"
+import Chance from 'chance'
+
+const chance = new Chance();
+endsnippet
+
+snippet avat "Ava's test"
+test(\`${1}\`, async t => {
+  ${2}
+});
+endsnippet
+
+snippet describe "Mocha/Cypress/Jest describe block"
+describe('${1}', function() {
+  it('${2}', function() {
+    ${3}
+  })
+})
+endsnippet
+
+snippet it "Mocha/Cypress it block"
+it('${1}', function() {
+  ${2}
+})
+endsnippet
+
+snippet flowlambda "A lambda handler"
+// @flow
+
+export const ${1} = async (event: Object, context: Object, callback: Response) => {
+  ${2}
+};
+endsnippet
+
+snippet try "description"
+try {
+  ${0:${VISUAL}}
+} catch (err) {
+  console.error('$1', err)
+}
+endsnippet
+
+snippet promall "wrap in Promise.all"
+const $1 = await Promise.all(
+  ${0: ${VISUAL}}
+)
+endsnippet
+
+snippet bool "Boolean"
+Boolean(${0:${VISUAL}})
+endsnippet
+
+snippet $ "wrap in template string variable" i
+${${0:${VISUAL}}}
+endsnippet
+
+snippet jsonstr "JSON.stringify" i
+JSON.stringify(${0:${VISUAL}})
+endsnippet
+
+snippet c "const"
+const $0
+endsnippet
+
+snippet l "let"
+let $0
+endsnippet
+
+snippet af "async function"
+async function () {
+  $0
+}
+endsnippet
+
+snippet f "function" i
+function () {
+  $0
+}
+endsnippet
+
+snippet !react "import React"
+import React from 'react'
+
+export default class $1 extends React.Component {
+  render () {
+    return (
+      $0
+    )
+  }
+}
+endsnippet

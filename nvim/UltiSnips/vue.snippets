@@ -1,0 +1,71 @@
+extends javascript html
+
+snippet data "description"
+data () {
+  ${2}
+
+  return {
+    ${1}
+  }
+}
+endsnippet
+
+snippet adata "description"
+asyncData () {
+  ${2}
+
+  return {
+    ${1}
+  }
+}
+endsnippet
+
+snippet ! "description"
+<template>
+  ${0}
+</template>
+
+<script>
+export default {
+}
+</script>
+
+<style scoped>
+</style>
+endsnippet
+
+snippet style "description"
+<style ${1:scoped}>
+  $0
+</style>
+endsnippet
+
+snippet bool "Boolean"
+Boolean(${0:${VISUAL}})
+endsnippet
+
+snippet style "<style> tag"
+<style ${1:lang="scss"} ${2:scoped}>
+${0:${VISUAL}}
+</style>
+endsnippet
+
+snippet af "async function"
+async function () {
+  $0
+}
+endsnippet
+
+snippet transition "css classes"
+.${1:class}-enter,
+.$1-leave-to {
+}
+
+.$1-enter-active,
+.$1-leave-active {
+}
+
+.$1-enter-to,
+.$1-leave {
+}
+endsnippet
