@@ -1,4 +1,5 @@
 Plug 'AndrewRadev/splitjoin.vim' " split/join multilines
+Plug 'christoomey/vim-sort-motion' " Sort within parenthesis with gsi(
 Plug 'jeetsukumaran/vim-indentwise' " move to lines with same indentation (for YAML files/python, etc.)
 Plug 'jiangmiao/auto-pairs' " Autoclose matching pairs
 Plug 'kshenoy/vim-signature' " For more visibility on marks
