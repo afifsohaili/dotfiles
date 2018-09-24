@@ -19,3 +19,4 @@ nmap <leader>w :StripWhitespace<CR>
 
 " Shortcut to set nopaste
 nmap <leader>np :set nopaste<CR>
+nmap <leader>+ <C-a><CR>
