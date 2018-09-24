@@ -53,11 +53,24 @@ tmux resize-pane -L 100
 
 tmux new-window
 tmux select-window -t 5
-tmux send-keys -t conf-cloud:5.1 "cd ~/ServiceRocket/jira-automations" C-m
+tmux send-keys -t conf-cloud:5.1 "cd ~/ServiceRocket/conf-cloud-utils/" C-m
 tmux split-window -h
-tmux send-keys -t conf-cloud:5.2 "cd ~/ServiceRocket/jira-automations" C-m
+tmux send-keys -t conf-cloud:5.2 "cd ~/ServiceRocket/conf-cloud-utils/" C-m
 tmux split-window -h
-tmux send-keys -t conf-cloud:5.3 "cd ~/ServiceRocket/jira-automations" C-m
+tmux send-keys -t conf-cloud:5.3 "cd ~/ServiceRocket/conf-cloud-utils/" C-m
+tmux split-window -h
+tmux send-keys -t conf-cloud:5.4 "cd ~/ServiceRocket/conf-cloud-utils/" C-m
+tmux select-layout main-vertical
+tmux resize-pane -R 100000
+tmux resize-pane -L 100
+
+tmux new-window
+tmux select-window -t 6
+tmux send-keys -t conf-cloud:6.1 "cd ~/ServiceRocket/jira-automations" C-m
+tmux split-window -h
+tmux send-keys -t conf-cloud:6.2 "cd ~/ServiceRocket/jira-automations" C-m
+tmux split-window -h
+tmux send-keys -t conf-cloud:6.3 "cd ~/ServiceRocket/jira-automations" C-m
 tmux select-layout main-vertical
 tmux resize-pane -R 100000
 tmux resize-pane -L 100
