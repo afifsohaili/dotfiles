@@ -7,4 +7,5 @@ let g:LanguageClient_serverCommands = {
       \ }
 let g:LanguageClient_autoStart = 1 " Automatically start language servers.
 
-nmap <buffer> <leader>f :call LanguageClient#textDocument_definition()<CR>
+nnoremap <leader>f :call LanguageClient#textDocument_definition()<CR>
+nnoremap gm :call LanguageClient_contextMenu()<CR>
