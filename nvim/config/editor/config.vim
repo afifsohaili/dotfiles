@@ -19,4 +19,7 @@ nmap <leader>w :StripWhitespace<CR>
 
 " Shortcut to set nopaste
 nmap <leader>np :set nopaste<CR>
+
+" Since <C-A> is bound to tmux's leader, it cannot be used to increment numbers.
+" Bind it to <leader>+
 nmap <leader>+ <C-a><CR>
