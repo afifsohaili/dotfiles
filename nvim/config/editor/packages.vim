@@ -7,4 +7,5 @@ Plug 'ntpeters/vim-better-whitespace' " Strip whitespace
 Plug 'sheerun/vim-polyglot' " Language packs for Vim
 Plug 'tpope/vim-abolish' " To switch cases
 Plug 'tpope/vim-commentary' " commenting support (gc)
-Plug 'tpope/vim-sleuth' " For heuristic indentation
+" Plug 'tpope/vim-sleuth' " For heuristic indentation
+Plug 'vim-scripts/loremipsum' " For random text generator with :LoremIpsum! <length>
