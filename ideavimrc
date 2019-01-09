@@ -1,0 +1,50 @@
+set clipboard+=unnamed " Merge clipboard
+
+let mapleader=","
+
+" Search-related
+set incsearch " Incremental search
+set hlsearch " Highlight search
+set ignorecase smartcase " Ignore case-sensitivity when searching except when the keyword contains uppercase letters
+
+set surround " Enable vim-surround
+set multiple-cursors " Enable multiple cursors support
+
+nnoremap <leader>r :source ~/.ideavimrc<CR>
+
+" Run commands
+nnoremap <leader>vrs :action Run<CR>
+nnoremap <leader>vfc :action ChooseRunConfiguration<CR>
+
+" Debug commands
+nnoremap <leader>b :action ToggleLineBreakpoint<CR>
+nnoremap <leader>db :action Debug<CR>
+nnoremap <leader>dr :action Resume<CR>
+nnoremap <leader>de :action EvaluateExpression<CR>
+
+nnoremap <leader>es :action Javascript.Linters.EsLint.Fix<CR>
+nnoremap <leader>oi :action OptimizeImports<CR>
+nnoremap <leader>gt :action GotoTest<CR>
+
+" Motions
+nnoremap <C-.> :action VimMotionNextTab<CR>
+nnoremap <C-,> :action VimMotionPreviousTab<CR>
+
+nnoremap <C-\> :action SelectInProjectView<CR>
+nnoremap <leader>wq :action CloseAllEditorsButActive<CR>
+nnoremap <leader>g :action GotoDeclaration<CR>
+nnoremap <leader>i :action GotoImplementation<CR>
+nnoremap <leader>t :action ActivateTerminalToolWindow<CR>
+nnoremap <leader>ag :action FindInPath<CR>
+vnoremap <leader>mc :action SurroundWithEmmet<CR>
+
+" Splits
+nnoremap vv <C-w>v
+nnoremap ss <C-w>s
+nnoremap <C-h> <C-w>h
+nnoremap <C-j> <C-w>j
+nnoremap <C-k> <C-w>k
+nnoremap <C-l> <C-w>l
+
+" Editing
+nnoremap <leader>p diw"0P
