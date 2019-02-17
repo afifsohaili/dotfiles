@@ -22,7 +22,7 @@ nmap <leader>np :set nopaste<CR>
 
 " Since <C-A> is bound to tmux's leader, it cannot be used to increment numbers.
 " Bind it to <leader>+
-nmap <leader>+ <C-a><CR>
+nmap <leader>+ <C-a>
 
 " Generate random words with vim-loremipsum. Use 50<leader>i to generate 50 words.
 nnoremap <leader>li :<C-U>exe "Loremipsum! " . v:count1<CR>
