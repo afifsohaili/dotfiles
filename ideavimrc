@@ -22,8 +22,10 @@ nnoremap <leader>db :action Debug<CR>
 nnoremap <leader>dr :action Resume<CR>
 nnoremap <leader>de :action EvaluateExpression<CR>
 
+" Code
 nnoremap <leader>es :action Javascript.Linters.EsLint.Fix<CR>
 nnoremap <leader>oi :action OptimizeImports<CR>
+nnoremap <leader>rc :action ReformatCode<CR>
 nnoremap <leader>gt :action GotoTest<CR>
 
 " Motions
@@ -32,6 +34,8 @@ nnoremap <C-,> :action VimMotionPreviousTab<CR>
 
 nnoremap <C-\> :action SelectInProjectView<CR>
 nnoremap <leader>wq :action CloseAllEditorsButActive<CR>
+nnoremap <leader>qr :action CloseAllToTheRight<CR>
+nnoremap <leader>ql :action CloseAllToTheLeft<CR>
 nnoremap <leader>g :action GotoDeclaration<CR>
 nnoremap <leader>i :action GotoImplementation<CR>
 nnoremap <leader>t :action ActivateTerminalToolWindow<CR>
