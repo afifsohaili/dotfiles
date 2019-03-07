@@ -129,3 +129,6 @@
   auto = 0
 [init]
 	templatedir = ~/.git-templates
+[user]
+	email = afifnajib@gmail.com
+	name = Afif Sohaili
