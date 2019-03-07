@@ -1,0 +1,8 @@
+.rc
+.lvimrc
+.importjs.js
+tags
+.ctags
+tags.*
+tern-*
+.agignore
