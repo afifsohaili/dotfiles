@@ -1,1 +1,1 @@
-for config_file ($HOME/dotfiles/projekihsan/*.zsh) source $config_file
+for config_file ($HOME/.yadr/projekihsan/*.zsh) source $config_file

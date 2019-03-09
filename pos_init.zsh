@@ -1,1 +1,1 @@
-for config_file ($HOME/dotfiles/pos/*.zsh) source $config_file
+for config_file ($HOME/.yadr/pos/*.zsh) source $config_file

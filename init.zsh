@@ -1,5 +1,5 @@
-for config_file ($HOME/dotfiles/*.zsh) do
-  if [ "$config_file" != "$HOME/dotfiles/init.zsh" ]; then
+for config_file ($HOME/.yadr/*.zsh) do
+  if [ "$config_file" != "$HOME/.yadr/init.zsh" ]; then
     source $config_file
   fi
 done

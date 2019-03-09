@@ -14,7 +14,7 @@ for fpath in split(globpath(vimsettings, '*.vim'), '\n')
   exe 'source' fpath
 endfor
 
-source ~/dotfiles/vim/plugins.vim
+source ~/.vim/plugins.vim
 
 set clipboard=unnamed
 
@@ -23,8 +23,6 @@ nnoremap <leader>vfc :VtrFlushCommand<cr>
 nnoremap <leader>vsf :VtrSendFile<cr>
 nnoremap <leader>vrs :VtrSendCommandToRunner<cr>
 nnoremap <leader>vfl :VtrSendFileAndLine<cr>
-
-set rtp+=~/dotfiles/vim "Submodules
 
 au FileType gitcommit set tw=72
 
@@ -81,11 +79,8 @@ function! Wipeout()
   endtry
 endfunction
 
-source ~/dotfiles/vim/plugins.vim
-
 let g:vim_g_query_url = "http://www.google.com/search?ie=UTF-8&sourceid=navclient&gfns=1&q="
 
 let NERDTreeIgnore = ['^node_modules$']
 
 let g:vue_disable_pre_processors=1
-
