@@ -1,0 +1,42 @@
+#!/bin/bash
+
+#
+#
+# This hook will automatically prepend the ticket number (inferred from your
+# branch) into your commit message.
+# - e.g. If you have a branch called `report-1234-fix-something` and you do a
+# `git commit -m "Fix abc"`, your commit message will automatically become
+# `[REPORT-1234] Fix abc`.
+#
+# Instructions:
+# 1. Copy the following file into `~/.git-templates`.
+# 2. Run `git config --global init.templatedir "~/.git-templates"`.
+# 3. Go to any project and rerun `git init .` to pull the hooks from the template dir.
+# 4. You should now see this file in your project's `.git/hooks/prepare-commit-msg`.
+#
+#
+
+# Get the commit message
+message=`cat $1`
+
+# Blacklist branches you do not want this script to run on
+if [ -z "$BRANCHES_TO_SKIP" ]; then
+  BRANCHES_TO_SKIP=(master develop staging test)
+fi
+
+# Get the current branch name
+BRANCH_NAME=`git symbolic-ref --short HEAD`
+
+# Check if the branch is excluded based on the blacklist
+IS_BRANCH_EXCLUDED=`printf "%s\n" "${BRANCHES_TO_SKIP[@]}" | grep -c "^$BRANCH_NAME$"`
+
+# Get only the initial parts of the branch name
+# (e.g. scaf-1234-some-fix will return SCAF-1234)
+TICKET_NUMBER=`echo $BRANCH_NAME | sed -e 's:^\([^-]*-[^-]*\)-.*:\1:' -e \
+  'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+
+# Check if the branch is not excluded and if the commit message already
+# has the ticket number (useful when amending commit messages)
+if [ -n "$BRANCH_NAME" ] &&  ! [[ $IS_BRANCH_EXCLUDED -eq 1 ]] && ! [[ $message == "[$TICKET_NUMBER]"* ]]; then
+  sed -i.bak -e "1s/^/[$TICKET_NUMBER] /" $1
+fi

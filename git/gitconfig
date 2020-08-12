@@ -128,7 +128,7 @@
 [gc]
   auto = 0
 [init]
-	templatedir = ~/.git-templates
+  templatedir = ~/.git-templates
 [user]
-	email = afifnajib@gmail.com
-	name = Afif Sohaili
+  email = afifnajib@gmail.com
+  name = Afif Sohaili
