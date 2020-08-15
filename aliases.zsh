@@ -1,3 +1,42 @@
+# From YADR
+alias psa="ps aux"
+alias ll='ls -alGh'
+alias ls='ls -Gh'
+
+# Git Aliases
+alias gs='git status'
+alias gps='git push'
+alias gst='git stash'
+alias gcm='git commit -m'
+alias gco='git checkout'
+alias ga='git add -A'
+alias gr='git rebase'
+alias gra='git rebase --abort'
+alias gl='git log --graph --date=short'
+alias gf='git fetch'
+alias gfp='git fetch --prune'
+alias gd='git diff'
+alias gb='git branch -v'
+alias gpl='git pull'
+alias gplr='git pull --rebase'
+alias grs='git reset'
+alias grsh='git reset --hard'
+alias gt='git t'
+alias gbg='git bisect good'
+alias gbb='git bisect bad'
+
+# Common shell functions
+alias less='less -r'
+alias tf='tail -f'
+alias l='less'
+alias lh='ls -alt | head' # see the last modified files
+alias screen='TERM=screen screen'
+
+alias k9='kill -9'
+
+# Homebrew
+alias brewu='brew update && brew upgrade && brew cleanup && brew doctor'
+
 # Custom Git functions
 alias gpso='git push origin'
 alias gpf='git push --force'
@@ -26,4 +65,5 @@ alias yr="yarn remove"
 alias yad="yarn add -D"
 
 alias reload='source ~/.zshrc'
-alias vi='vim'
+alias vi="nvim"
+alias vim="nvim"

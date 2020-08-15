@@ -1,6 +1,0 @@
-Bundle 'garbas/vim-snipmate.git'
-Bundle 'honza/vim-snippets'
-Bundle 'jtratner/vim-flavored-markdown.git'
-Bundle 'nelstrom/vim-markdown-preview'
-Bundle 'skwp/vim-html-escape'
-Bundle 'jparise/vim-graphql'
