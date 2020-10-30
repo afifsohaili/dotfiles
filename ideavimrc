@@ -6,45 +6,66 @@ let mapleader=","
 set incsearch " Incremental search
 set hlsearch " Highlight search
 set ignorecase smartcase " Ignore case-sensitivity when searching except when the keyword contains uppercase letters
-
 set surround " Enable vim-surround
+set commentary " Enable commentary support, gcc, etc.
 set multiple-cursors " Enable multiple cursors support
+set ideajoin " Enable IDEA join
+set visualbell " Show visual bell instead of beeping
 
-nnoremap <leader>r :source ~/.ideavimrc<CR>
+nnoremap <leader>rl :source ~/.ideavimrc<CR>
 
 " Run commands
 nnoremap <leader>vrs :action Run<CR>
 nnoremap <leader>vfc :action ChooseRunConfiguration<CR>
 
 " Debug commands
-nnoremap <leader>b :action ToggleLineBreakpoint<CR>
+nnoremap <leader>bb :action ToggleLineBreakpoint<CR>
+nnoremap <leader>BB :action ViewBreakpoints<CR>
+nnoremap <leader>dB :action XDebugger.MuteBreakpoints<CR>
 nnoremap <leader>db :action Debug<CR>
+nnoremap <leader>d> :action StepOver<CR>
 nnoremap <leader>dr :action Resume<CR>
+nnoremap <leader>dj :action RunToCursor<CR>
 nnoremap <leader>de :action EvaluateExpression<CR>
 
 " Code
-nnoremap <leader>es :action Javascript.Linters.EsLint.Fix<CR>
+nnoremap <leader>es :action Javascript.Linters.EsLint.Fix<CR>:action TsLintFileFixAction<CR>
 nnoremap <leader>oi :action OptimizeImports<CR>
 nnoremap <leader>rc :action ReformatCode<CR>
-nnoremap <leader>gt :action GotoTest<CR>
+nnoremap <leader>ac :action RearrangeCode<CR>
+nnoremap <leader>re :action IntroduceVariable<CR>
+nnoremap <leader>ri :action IntroduceVariable<CR>
+nnoremap <leader>rf :action Refactorings.QuickListPopupAction<CR>
+nnoremap <leader>rn :action RenameElement<CR>
+vnoremap <leader>mc :action SurroundWithEmmet<CR>
+nnoremap cr-- :action StringManipulation.ToHyphenCaseOrCamelCase<CR>
 
-" Motions
-nnoremap <C-.> :action VimMotionNextTab<CR>
-nnoremap <C-,> :action VimMotionPreviousTab<CR>
-
+" Intellij Motions
+nnoremap <C-.> :action NextTab<CR>
+nnoremap <C-,> :action PreviousTab<CR>
 nnoremap <C-\> :action SelectInProjectView<CR>
 nnoremap <leader>wq :action CloseAllEditorsButActive<CR>
-nnoremap <leader>qr :action CloseAllToTheRight<CR>
-nnoremap <leader>ql :action CloseAllToTheLeft<CR>
-nnoremap <leader>g :action GotoDeclaration<CR>
-nnoremap <leader>i :action GotoImplementation<CR>
+nnoremap <leader>qh :action CloseAllToTheLeft<CR>
+nnoremap <leader>ql :action CloseAllToTheRight<CR>
 nnoremap <leader>t :action ActivateTerminalToolWindow<CR>
 nnoremap <leader>ag :action FindInPath<CR>
-vnoremap <leader>mc :action SurroundWithEmmet<CR>
+
+" Code Navigation
+nnoremap <A-r> :action GotoNextError<CR>
+nnoremap <M-b> :echo "Disabled. Please use ,gd or ,gi"<CR>
+nnoremap <leader>gi :action GotoImplementation<CR>
+nnoremap <leader>gd :action GotoDeclaration<CR>
+nnoremap <leader>gu :action ShowUsages<CR>
+nnoremap <leader>gr :action RecentFiles<CR>
+nnoremap <leader>gt :action GotoTest<CR>
+nnoremap % :action EditorMatchBrace<CR>
+nnoremap zR :action ExpandAllRegions<CR>
 
 " Splits
 nnoremap vv <C-w>v
+nnoremap vV :action MoveTabRight<CR>
 nnoremap ss <C-w>s
+nnoremap sS :action MoveTabDown<CR>
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
