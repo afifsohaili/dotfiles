@@ -6,3 +6,4 @@ tags
 tags.*
 tern-*
 .agignore
+.java-version
