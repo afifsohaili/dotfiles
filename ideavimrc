@@ -37,6 +37,7 @@ nnoremap <leader>re :action IntroduceVariable<CR>
 nnoremap <leader>ri :action IntroduceVariable<CR>
 nnoremap <leader>rf :action Refactorings.QuickListPopupAction<CR>
 nnoremap <leader>rn :action RenameElement<CR>
+nnoremap <leader>rv :action Inline<CR>
 vnoremap <leader>mc :action SurroundWithEmmet<CR>
 nnoremap cr-- :action StringManipulation.ToHyphenCaseOrCamelCase<CR>
 
