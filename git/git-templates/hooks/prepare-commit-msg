@@ -21,7 +21,7 @@ message=`cat $1`
 
 # Blacklist branches you do not want this script to run on
 if [ -z "$BRANCHES_TO_SKIP" ]; then
-  BRANCHES_TO_SKIP=(master develop staging test)
+  BRANCHES_TO_SKIP=(master develop staging test main)
 fi
 
 # Get the current branch name
