@@ -43,8 +43,11 @@ nnoremap cr-- :action StringManipulation.ToHyphenCaseOrCamelCase<CR>
 
 " Intellij Motions
 nnoremap <C-.> :action NextTab<CR>
+nnoremap gl :action NextTab<CR>
 nnoremap <C-,> :action PreviousTab<CR>
+nnoremap gh :action PreviousTab<CR>
 nnoremap <C-\> :action SelectInProjectView<CR>
+nnoremap <leader>e :action SelectInProjectView<CR>
 nnoremap <leader>wq :action CloseAllEditorsButActive<CR>
 nnoremap <leader>qh :action CloseAllToTheLeft<CR>
 nnoremap <leader>ql :action CloseAllToTheRight<CR>
