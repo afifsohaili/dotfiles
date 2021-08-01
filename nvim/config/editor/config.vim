@@ -11,8 +11,8 @@ set ignorecase      " ignore case when searching
 set smartcase       " ignore case if search pattern is lower case
 		    " case-sensitive otherwise
 
-" clear search highlight with //
-nmap <silent> // :let @/=""<CR>
+" clear search highlight with <leader>+//
+nmap <silent> <leader>// :let @/=""<CR>
 
 " Use <leader>w to strip trailing whitespaces
 nmap <leader>w :StripWhitespace<CR>
