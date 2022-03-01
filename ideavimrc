@@ -29,13 +29,12 @@ nnoremap <leader>dj :action RunToCursor<CR>
 nnoremap <leader>de :action EvaluateExpression<CR>
 
 " Code
+nnoremap <leader>ac :action RearrangeCode<CR>
 nnoremap <leader>es :action Javascript.Linters.EsLint.Fix<CR>:action TsLintFileFixAction<CR>
 nnoremap <leader>oi :action OptimizeImports<CR>
 nnoremap <leader>rc :action ReformatCode<CR>
-nnoremap <leader>ac :action RearrangeCode<CR>
-nnoremap <leader>re :action IntroduceVariable<CR>
-nnoremap <leader>ri :action IntroduceVariable<CR>
 nnoremap <leader>rf :action Refactorings.QuickListPopupAction<CR>
+nnoremap <leader>ri :action IntroduceVariable<CR>
 nnoremap <leader>rn :action RenameElement<CR>
 nnoremap <leader>rv :action Inline<CR>
 vnoremap <leader>mc :action SurroundWithEmmet<CR>
@@ -56,6 +55,7 @@ nnoremap <leader>ag :action FindInPath<CR>
 
 " Code Navigation
 nnoremap <A-r> :action GotoNextError<CR>
+nnoremap <A-n> :action VcsShowNextChangeMarker<CR>
 nnoremap <M-b> :echo "Disabled. Please use ,gd or ,gi"<CR>
 nnoremap <leader>gi :action GotoImplementation<CR>
 nnoremap <leader>gd :action GotoDeclaration<CR>
@@ -74,6 +74,9 @@ nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
+
+" Utilities
+nnoremap <leader>cp :action CopyPaths<CR>
 
 " Editing
 nnoremap <leader>p diw"0P
