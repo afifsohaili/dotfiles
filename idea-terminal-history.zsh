@@ -1,1 +1,1 @@
-export HISTFILE=/Users/afifsohaili/.zsh_history
+export HISTFILE=$HOME/.zsh_history
