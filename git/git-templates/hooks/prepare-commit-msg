@@ -32,7 +32,8 @@ IS_BRANCH_EXCLUDED=`printf "%s\n" "${BRANCHES_TO_SKIP[@]}" | grep -c "^$BRANCH_N
 
 # Get only the initial parts of the branch name
 # (e.g. scaf-1234-some-fix will return SCAF-1234)
-TICKET_NUMBER=`echo $BRANCH_NAME | sed -e 's:^\([^-]*-[^-]*\)-.*:\1:' -e \
+TICKET_NUMBER=`echo $BRANCH_NAME | sed -e 's/feature\///' -e 's/update\///' -e \
+  's/fix\///' -e 's:^\([^-]*-[^-]*\)-.*:\1:' -e \
   'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
 
 # Check if the branch is not excluded and if the commit message already

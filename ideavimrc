@@ -77,6 +77,9 @@ nnoremap <C-l> <C-w>l
 
 " Utilities
 nnoremap <leader>cp :action CopyPaths<CR>
+nnoremap <leader>+ :action EditorIncreaseFontSize<CR>
+nnoremap <leader>- :action EditorDecreaseFontSize<CR>
+nnoremap <leader>pr :action ActivatePullRequestsToolWindow<CR>
 
 " Editing
 nnoremap <leader>p diw"0P
