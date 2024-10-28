@@ -43,6 +43,7 @@ nnoremap cr-- :action StringManipulation.ToHyphenCaseOrCamelCase<CR>
 " Intellij Motions
 nnoremap <C-.> :action NextTab<CR>
 nnoremap gl :action NextTab<CR>
+nnoremap <leader>gl :action MoveEditorToOppositeTabGroup<CR>
 nnoremap <C-,> :action PreviousTab<CR>
 nnoremap gh :action PreviousTab<CR>
 nnoremap <C-\> :action SelectInProjectView<CR>
@@ -53,10 +54,14 @@ nnoremap <leader>ql :action CloseAllToTheRight<CR>
 nnoremap <leader>t :action ActivateTerminalToolWindow<CR>
 nnoremap <leader>ag :action FindInPath<CR>
 
+" Git
+nnoremap <leader>gb :action Git.Branches<CR>
+nnoremap <leader>gh :action Git.Branches<CR>
+
 " Code Navigation
 nnoremap <A-r> :action GotoNextError<CR>
-nnoremap <A-n> :action VcsShowNextChangeMarker<CR>
-nnoremap <M-b> :echo "Disabled. Please use ,gd or ,gi"<CR>
+nnoremap <A-d> :action VcsShowNextChangeMarker<CR>
+nnoremap <M-b> :echo "Disabled. Please use ,gd to go to declaration or ,gi to go to implementation"<CR>
 nnoremap <leader>gi :action GotoImplementation<CR>
 nnoremap <leader>gd :action GotoDeclaration<CR>
 nnoremap <leader>gu :action ShowUsages<CR>
@@ -77,9 +82,14 @@ nnoremap <C-l> <C-w>l
 
 " Utilities
 nnoremap <leader>cp :action CopyPaths<CR>
+nnoremap <leader>cl :action CopyPathWithLineNumber<CR>
 nnoremap <leader>+ :action EditorIncreaseFontSize<CR>
 nnoremap <leader>- :action EditorDecreaseFontSize<CR>
 nnoremap <leader>pr :action ActivatePullRequestsToolWindow<CR>
+nnoremap <leader>pv :action Github.Pull.Request.Review.In.Editor.Toggle<CR>
 
 " Editing
 nnoremap <leader>p diw"0P
+
+" Allow using :Wq as alias of :wq
+command Wq wq
