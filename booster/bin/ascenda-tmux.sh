@@ -19,5 +19,8 @@ tmux send-keys -t work:3 "cd ~/work/points_bank" C-m
 tmux new-window
 tmux send-keys -t work:4 "cd ~/work/e2e-reporting" C-m
 tmux new-window
-tmux send-keys -t work:5 "cd ~/work/e2e-dev" C-m
+tmux send-keys -t work:5 "cd ~/work/e2e-dev/apps_run" C-m
+tmux send-keys -t work:5 "killovermind" C-m
+tmux split-window -v
+tmux send-keys -t work:5.2 "cd ~/work/e2e-dev/apps_run" C-m
 tmux at -t work
