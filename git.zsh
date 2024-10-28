@@ -1,4 +1,5 @@
 export PATH="$PATH:$HOME/Projects/dotfiles/git/bin"
+export PATH="$PATH:$HOME/Projects/dotfiles/bin"
 zstyle ':completion:*:*' ignored-patterns '*ORIG_HEAD'
 
 alias cb="git_current_branch"
