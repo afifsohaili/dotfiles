@@ -11,3 +11,6 @@ format = "[$symbol($version )]($style)"
 
 [nodejs]
 format = "[$symbol($version )]($style)"
+
+[time]
+disabled = false
