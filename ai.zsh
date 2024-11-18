@@ -1,4 +1,11 @@
 function gcauto() {
+  # Parse command line options
+  local detailed=false
+  if [[ "$1" == "-d" ]] || [[ "$1" == "--detailed" ]]; then
+    detailed=true
+    shift  # Remove the flag from arguments
+  fi
+
   # 1. Read the git diff of changes
   local diff_output=$(git diff --cached)
 
@@ -13,7 +20,14 @@ function gcauto() {
     # Remove the surrounding quotes added by JSON.generate
     diff_output="${diff_output:1:-1}"
 
-    # 2. Call Claude AI API
+    # 2. Call Claude AI API with different prompts based on detailed flag
+    local prompt
+    if [ "$detailed" = true ]; then
+      prompt="Based on the following git diff, generate a detailed commit message with a summary line (max 90 chars) followed by a blank line and then a detailed description of the changes:\\n\\n${diff_output}\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT."
+    else
+      prompt="Based on the following git diff, generate a one-line commit message summarizing the changes (max 90 characters):\\n\\n${diff_output}\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS LIKE 'Here is your commit message' introductory paragraph."
+    fi
+
     local ai_response=$(curl -s -X POST "https://api.anthropic.com/v1/messages" \
       -H "Content-Type: application/json" \
       -H "x-api-key: $ANTHROPIC_API_KEY" \
@@ -24,7 +38,7 @@ function gcauto() {
           \"messages\": [
           {
             \"role\": \"user\",
-            \"content\": \"Based on the following git diff, generate a commit message with a brief summary (max 70 characters) on the first line, followed by an empty line, and then a description of the intent of the changes:\\n\\n${diff_output}\n\nPROVIDE ONLY THE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS LIKE 'Here is your commit message' introductory paragraph.\"
+            \"content\": \"$prompt\"
           }
           ]
         }")
