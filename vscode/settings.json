@@ -1,0 +1,83 @@
+{
+    "window.commandCenter": 1,
+    "files.autoSave": "onFocusChange",
+    "vim.useSystemClipboard": true,
+    "vim.leader": ",",
+    "vim.normalModeKeyBindings": [
+        {
+            "before": ["g", "h"],
+            "commands": ["workbench.action.previousEditor"]
+        },
+        {
+            "before": ["<leader>", "e", "s"],
+            "commands": ["eslint.executeAutofix"]
+        },
+        {
+            "before": ["<leader>", "w", "q"],
+            "commands": ["workbench.action.closeOtherEditors"]
+        },
+        {
+            "before": ["g", "l"],
+            "commands": ["workbench.action.nextEditor"]
+        },
+        {
+            "before": ["<leader>", "e"],
+            "commands": ["workbench.files.action.showActiveFileInExplorer"]
+        },
+        {
+            "before": ["<leader>", "t"],
+            "commands": ["workbench.action.terminal.toggleTerminal"]
+        },
+        {
+            "before": ["<leader>", "a", "g"],
+            "commands": ["workbench.action.findInFiles"]
+        },
+        {
+            "before": ["v", "V"],
+            "commands": ["workbench.action.moveEditorToNextGroup"]
+        },
+        {
+            "before": ["s", "S"],
+            "commands": ["workbench.action.moveEditorToBelowGroup"]
+        },
+        {
+            "before": ["<leader>", "v", "f", "c"],
+            "commands": ["workbench.action.tasks.runTask"]
+        },
+        {
+            "before": ["<leader>", "v", "r", "s"],
+            "commands": ["workbench.action.tasks.reRunTask"]
+        },
+        {
+            "before": ["<leader>", "b", "b"],
+            "commands": ["editor.debug.action.toggleBreakpoint"]
+        },
+        {
+            "before": ["<leader>", "d", "r"],
+            "commands": ["workbench.action.debug.continue"]
+        },
+        {
+            "before": ["<leader>", "d", "j"],
+            "commands": ["editor.debug.action.runToCursor"]
+        },
+        {
+            "before": ["<leader>", "d", "e"],
+            "commands": ["workbench.debug.action.toggleRepl"]
+        },
+        {
+            "before": ["<leader>", "d", ">"],
+            "commands": ["workbench.action.debug.stepOver"]
+        }
+    ],
+    "vim.commandLineModeKeyBindings": [
+        
+    ],
+    "vim.foldfix": true,
+    "explorer.confirmDelete": false,
+    "[vue]": {
+        "editor.defaultFormatter": "Vue.volar"
+    },
+    "workbench.settings.applyToAllProfiles": [
+        
+    ]
+}
