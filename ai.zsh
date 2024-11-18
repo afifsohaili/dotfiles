@@ -40,18 +40,31 @@ function gcauto() {
     local commits=$(git log --reverse --pretty=format:"%H" $context_ref..HEAD)
     
     if [ -n "$commits" ]; then
-      context="Here is the context of recent changes:\\n"
-      while IFS= read -r commit; do
-        local commit_message=$(git log -1 --pretty=format:"%s%n%n%b" $commit)
-        local commit_diff=$(git show --pretty=format:"" $commit)
-        context="${context}Commit: $commit_message\\n"
-        context="${context}Changes:\\n$commit_diff\\n\\n"
-      done <<< "$commits"
+      # Create context using a more robust JSON escaping approach
+      context=$(ruby -e '
+        require "json"
+        commits = ARGV[0].split("\n")
+        context = "Here is the context of recent changes:\n"
+        commits.each do |commit|
+          commit_message = `git log -1 --pretty=format:"%s%n%n%b" #{commit}`
+          commit_diff = `git show --pretty=format:"" #{commit}`
+          context += "Commit: #{commit_message}\n"
+          context += "Changes:\n#{commit_diff}\n\n"
+        end
+        puts JSON.generate(context)
+      ' "$commits")
+      # Remove the surrounding quotes from the JSON-encoded string
+      context="${context:1:-1}"
     fi
   fi
 
-  # Escape special characters and newlines in the diff output using Ruby
-  diff_output=$(ruby -e "require 'json'; puts JSON.generate(ARGV[0].gsub(\"\n\", '\\n'))" "$diff_output")
+  # Similarly, use Ruby to escape the diff output more robustly
+  diff_output=$(ruby -e '
+    require "json"
+    diff = `git diff --cached`
+    puts JSON.generate(diff)
+  ')
+  # Remove the surrounding quotes from the JSON-encoded string
   diff_output="${diff_output:1:-1}"
 
   # 2. Call Claude AI API with different prompts based on flags
