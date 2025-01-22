@@ -21,3 +21,29 @@ get_pr_number () {
   local CURRENT_FOLDER=`pwd | sed 's/.*\///'`
   echo "Jenkins: https://jenkins.int.kaligo.com/blue/organizations/jenkins/Ascenda%2F$CURRENT_FOLDER/activity?branch=PR-$PR_NUMBER"
 }
+
+function open_on_github() {
+  # allow passing the file name to open
+  local FILE_NAME=$1
+  # get the remote url and lowercase it
+  local REMOTE=`git remote get-url --push origin | tr '[:upper:]' '[:lower:]'`
+  # replace git@ with https://
+  REMOTE=`echo $REMOTE | sed 's/git@/https:\/\//'`
+  # replace :kaligo (lowercased) with /Kaligo
+  REMOTE=`echo $REMOTE | sed 's/:kaligo\//\/Kaligo\//'`
+  # remove .git
+  REMOTE=`echo $REMOTE | sed 's/\.git//'`
+  # open the github page
+  if [ -n "$FILE_NAME" ]; then
+    # if pushed to remote, get the current commit hash, otherwise get master ref
+    if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+      CURRENT_COMMIT=`git rev-parse HEAD`
+      open $REMOTE/blob/$CURRENT_COMMIT/$FILE_NAME
+    else
+      CURRENT_COMMIT=`git rev-parse master`
+      open $REMOTE/blob/$CURRENT_COMMIT/$FILE_NAME
+    fi
+  else
+    open $REMOTE
+  fi
+}
