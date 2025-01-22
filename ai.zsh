@@ -134,3 +134,6 @@ end
   echo "Commit created successfully with AI-generated message."
 }
 
+function cursor {
+  $HOME/Applications/Cursor.app/Contents/MacOS/Cursor $@
+}
