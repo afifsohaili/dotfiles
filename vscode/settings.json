@@ -48,6 +48,18 @@
             "commands": ["workbench.action.tasks.runTask"]
         },
         {
+            "before": ["<leader>", "r", "1"],
+            "commands": [
+                { "command": "workbench.action.tasks.runTask", "args": "1" }
+            ]
+        },
+        {
+            "before": ["<leader>", "r", "2"],
+            "commands": [
+                { "command": "workbench.action.tasks.runTask", "args": "2" }
+            ]
+        },
+        {
             "before": ["<leader>", "v", "r", "s"],
             "commands": ["workbench.action.tasks.reRunTask"]
         },
@@ -86,9 +98,45 @@
         {
             "before": ["<C-h>"],
             "commands": ["workbench.action.navigateLeft"]
+        },
+        {
+            "before": ["<leader>", "v", "r", "l"],
+            "commands": [
+                { "command": "workbench.action.files.saveAll" },
+                {
+                    "command": "workbench.action.terminal.sendSequence",
+                    "args": { "text": "${relativeFile}:${lineNumber}\n" }
+                }
+            ]
+        },
+        {
+            "before": ["<leader>", "v", "r", "k"],
+            "commands": [
+                { "command": "workbench.action.files.saveAll" },
+                {
+                    "command": "workbench.action.terminal.sendSequence",
+                    "args": { "text": "\u001b[A\n" }
+                }
+            ]
+        },
+        {
+            "before": ["<leader>", "v", "r", "a"],
+            "commands": [
+                { "command": "workbench.action.files.saveAll" },
+                {
+                    "command": "workbench.action.terminal.sendSequence",
+                    "args": { "text": "${relativeFile}\n" }
+                }
+            ]
         }
     ],
     "vim.commandLineModeKeyBindings": [],
+    "vim.visualModeKeyBindings": [
+        {
+            "before": ["<leader>", "g", "h"],
+            "commands": ["githublinker.copyLink"]
+        }
+    ],
     "vim.foldfix": true,
     "explorer.confirmDelete": false,
     "[vue]": {
@@ -97,5 +145,13 @@
     "javascript.updateImportsOnFileMove.enabled": "never",
     "files.insertFinalNewline": true,
     "editor.wordWrap": "off",
-    "typescript.updateImportsOnFileMove.enabled": "never"
+    "typescript.updateImportsOnFileMove.enabled": "never",
+    "[git-commit]": { "editor.rulers": [80] },
+    "editor.rulers": [
+        120
+    ],
+    "cursor.cpp.disabledLanguages": [
+        "plaintext"
+    ],
+    "terminal.integrated.enableMultiLinePasteWarning": false
 }
