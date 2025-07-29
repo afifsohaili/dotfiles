@@ -153,5 +153,10 @@
     "cursor.cpp.disabledLanguages": [
         "plaintext"
     ],
-    "terminal.integrated.enableMultiLinePasteWarning": false
+    "terminal.integrated.enableMultiLinePasteWarning": false,
+    "accessibility.signals.terminalBell": {
+        "sound": "on"
+    },
+    "git.blame.editorDecoration.enabled": false,
+    "git.blame.statusBarItem.enabled": false
 }
