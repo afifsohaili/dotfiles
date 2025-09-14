@@ -6,6 +6,7 @@
     "vim.handleKeys": {
         "<C-\\>": true
     },
+    "vim.hlsearch": true,
     "vim.normalModeKeyBindings": [
         {
             "before": ["g", "h"],
@@ -103,9 +104,10 @@
             "before": ["<leader>", "v", "r", "l"],
             "commands": [
                 { "command": "workbench.action.files.saveAll" },
+                { "command": "workbench.action.terminal.clear" },
                 {
                     "command": "workbench.action.terminal.sendSequence",
-                    "args": { "text": "${relativeFile}:${lineNumber}\n" }
+                    "args": { "text": "${relativeFile}:${lineNumber} --format documentation --out rspec.log --format progress\n" }
                 }
             ]
         },
@@ -113,6 +115,7 @@
             "before": ["<leader>", "v", "r", "k"],
             "commands": [
                 { "command": "workbench.action.files.saveAll" },
+                { "command": "workbench.action.terminal.clear" },
                 {
                     "command": "workbench.action.terminal.sendSequence",
                     "args": { "text": "\u001b[A\n" }
@@ -123,9 +126,10 @@
             "before": ["<leader>", "v", "r", "a"],
             "commands": [
                 { "command": "workbench.action.files.saveAll" },
+                { "command": "workbench.action.terminal.clear" },
                 {
                     "command": "workbench.action.terminal.sendSequence",
-                    "args": { "text": "${relativeFile}\n" }
+                    "args": { "text": "${relativeFile} --format documentation --out rspec.log --format progress\n" }
                 }
             ]
         }
@@ -158,5 +162,14 @@
         "sound": "on"
     },
     "git.blame.editorDecoration.enabled": false,
-    "git.blame.statusBarItem.enabled": false
+    "git.blame.statusBarItem.enabled": false,
+    "workbench.editorAssociations": {
+        "*.pdf": "default"
+    },
+    "workbench.colorCustomizations": {
+        "editor.findMatchHighlightBackground": "#00ff446b",
+        "editor.findMatchBackground": "#00ff446b", 
+        "editor.selectionBackground": "#4c5767",
+        "editor.wordHighlightBackground":"#fff2006b"
+    }
 }
