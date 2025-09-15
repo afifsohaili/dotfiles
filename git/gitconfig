@@ -71,4 +71,5 @@
   templatedir = ~/.git-templates
   defaultBranch = main
 [user]
-	name = Afif Sohaili (Ascenda)
+	name = Afif Sohaili
+	email = afifnajib@gmail.com
