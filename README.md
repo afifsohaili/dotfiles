@@ -8,3 +8,8 @@
 3. `asdf plugin add python`
 3. `asdf plugin add postgres`
 3. `asdf plugin add redis`
+4. ln -s $HOME/Projects/dotfiles/tmux/tmux.conf $HOME/.tmux.conf
+5. ln -s $HOME/Projects/dotfiles/starship/starship.toml $HOME/.config/
+6. Install oh my zsh
+7. Load `source $HOME/Projects/dotfiles/init.zsh` to .zshrc
+
