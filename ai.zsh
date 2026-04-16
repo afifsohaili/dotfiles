@@ -286,7 +286,7 @@ function gcauto_k2p5() {
     -d "{
         \"model\": \"fireworks/kimi-k2p5\",
         \"max_tokens\": 4096,
-        \"reasoning_effort\": \"low\",
+        \"reasoning_effort\": \"none\",
         \"top_p\": 1,
         \"top_k\": 40,
         \"presence_penalty\": 0,
