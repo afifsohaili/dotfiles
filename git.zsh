@@ -13,3 +13,18 @@ function git_recent_branches() {
   local result_count=${1:-20}
   git reflog | grep "checkout:" | head -n $result_count | grep -o "to [^']*" | sed 's/to //' | awk '!seen[$0]++'
 }
+
+alias gc="git commit"
+
+function gexclude() {
+  echo "$1" >> .git/info/exclude
+}
+
+function ginclude() {
+  # check if .gitignore exists
+  if [ ! -f .gitignore ]; then
+    echo "No .gitignore file found, exiting..."
+    return 1
+  fi
+  echo "!$1" >> .gitignore
+}

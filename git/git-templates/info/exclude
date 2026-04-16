@@ -9,3 +9,5 @@ tern-*
 .java-version
 .nvmrc
 .idea
+AGENTS.md
+CLAUDE.md
