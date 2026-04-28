@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Grammar correction script using Claude API
-# Make sure to set your ANTHROPIC_API_KEY environment variable
+# Grammar correction script using Fireworks AI API (kimi-k2p6)
+# Make sure to set your FIREWORKS_API_KEY environment variable
 
 grammar() {
     # check if jq is installed
@@ -10,10 +10,10 @@ grammar() {
         return 1
     fi
 
-    # check if $ANTHROPIC_API_KEY is set
-    if [[ -z "$ANTHROPIC_API_KEY" ]]; then
-        echo "Error: ANTHROPIC_API_KEY environment variable is not set."
-        echo "Please set it with: export ANTHROPIC_API_KEY='your-api-key'"
+    # check if $FIREWORKS_API_KEY is set
+    if [[ -z "$FIREWORKS_API_KEY" ]]; then
+        echo "Error: FIREWORKS_API_KEY environment variable is not set."
+        echo "Please set it with: export FIREWORKS_API_KEY='your-api-key'"
         return 1
     fi
 
@@ -28,15 +28,19 @@ grammar() {
         return 1
     fi
 
-    echo "Sending request to Claude..."
+    echo "Sending request to Fireworks AI..."
 
     json_payload=$(jq -n \
                   --arg content "$input_text" \
                   '{
-                    "model": "claude-3-5-sonnet-20240620",
+                    "model": "fireworks/kimi-k2p6",
                     "max_tokens": 1024,
-                    "system": "You are an expert English professional communication advisor. Given these sentences, revise the tone and correct the grammar, with minimal change to the meaning. When replying, only directly give me the answer. No need to summarize the changes as well.",
+                    "temperature": 0.6,
                     "messages": [
+                      {
+                        "role": "system",
+                        "content": "You are an expert English professional communication advisor. Given these sentences, revise the tone and correct the grammar, with minimal change to the meaning. Output ONLY the corrected text. Do not include any reasoning, thinking, analysis, explanations, or summaries."
+                      },
                       {
                         "role": "user",
                         "content": $content
@@ -44,26 +48,46 @@ grammar() {
                     ]
                   }')
 
-    response=$(curl -s https://api.anthropic.com/v1/messages \
+    local tmp_resp=$(mktemp /tmp/grammar.XXXXXX)
+    curl -s -w "\n%{http_code}" -X POST "https://api.fireworks.ai/inference/v1/chat/completions" \
+        -H "Accept: application/json" \
         -H "Content-Type: application/json" \
-        -H "x-api-key: $ANTHROPIC_API_KEY" \
-        -H "anthropic-version: 2023-06-01" \
-        -d "$json_payload")
+        -H "Authorization: Bearer $FIREWORKS_API_KEY" \
+        -d "$json_payload" > "$tmp_resp"
 
-    # Use 'printf' to pipe the response to jq safely, preventing issues with newlines
-    error_message=$(printf "%s" "$response" | jq -r '.error.message' 2>/dev/null)
-    if [[ "$error_message" != "null" ]] && [[ -n "$error_message" ]]; then
-        echo "Error: API returned an error."
-        echo "Message: $error_message"
+    local http_status=$(tail -n 1 "$tmp_resp")
+    local body_file=$(mktemp /tmp/grammar_body.XXXXXX)
+    sed '$d' "$tmp_resp" > "$body_file"
+    rm -f "$tmp_resp"
+
+    if [[ ! "$http_status" =~ ^2 ]]; then
+        echo "API request failed with HTTP status $http_status. Response:"
+        cat "$body_file"
+        rm -f "$body_file"
         return 1
     fi
 
-    # Use 'printf' here as well for consistency and safety
-    corrected_text=$(printf "%s" "$response" | jq -r '.content[0].text' 2>/dev/null)
+    corrected_text=$(ruby -r json -e '
+        begin
+            response = JSON.parse(File.read(ARGV[0]))
+            if response["error"]
+                puts "Error from API: #{response["error"]["message"]}"
+                exit 1
+            end
+            puts response["choices"][0]["message"]["content"]
+        rescue JSON::ParserError => e
+            puts "Failed to parse API response: #{e.message}"
+            exit 1
+        rescue => e
+            puts "Unexpected error: #{e.message}"
+            exit 1
+        end
+    ' "$body_file")
 
-    if [[ "$corrected_text" == "null" ]] || [[ -z "$corrected_text" ]]; then
-        echo "Error: Failed to parse a valid response from Claude API."
-        echo "Response: $response"
+    rm -f "$body_file"
+
+    if [ $? -ne 0 ] || [[ -z "$corrected_text" ]]; then
+        echo "Error: Failed to parse a valid response from Fireworks API."
         return 1
     fi
 

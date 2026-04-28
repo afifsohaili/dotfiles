@@ -73,3 +73,5 @@
 [user]
 	name = Afif Sohaili
 	email = afifnajib@gmail.com
+[rebase]
+	instructionFormat = (%an <%ae>) %s

@@ -105,19 +105,19 @@ function gcauto_claude() {
   if [ "$detailed" = true ]; then
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
-    prompt="$prompt, generate a detailed commit message with a summary line (max 90 chars) followed by a blank line and then a detailed description of the changes."
+    prompt="$prompt, generate a detailed commit message with a summary line (max 72 chars) followed by a blank line and then a detailed description of the changes."
     [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
     prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
     [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional instructions:\\n$additional_instructions"
-    prompt="$prompt\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT. Be concise and to the point. You can sacrifice some details and grammar for brevity."
+    prompt="$prompt\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   else
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
-    prompt="$prompt, generate a one-line commit message summarizing the changes (max 90 characters)."
+    prompt="$prompt, generate a one-line commit message summarizing the changes (max 72 characters)."
     [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
     prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
     [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional context:\\n$additional_instructions"
-    prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Be concise and to the point. You can sacrifice some details and grammar for brevity."
+    prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   fi
 
   local ai_response=$(curl -s -w "\n%{http_code}" -X POST "https://api.anthropic.com/v1/messages" \
@@ -263,19 +263,19 @@ function gcauto_k2p5() {
   if [ "$detailed" = true ]; then
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
-    prompt="$prompt, generate a detailed commit message with a summary line (max 90 chars) followed by a blank line and then a detailed description of the changes."
+    prompt="$prompt, generate a detailed commit message with a summary line (max 72 chars) followed by a blank line and then a detailed description of the changes."
     [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
     prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
     [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional instructions:\\n$additional_instructions"
-    prompt="$prompt\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT. Be concise and to the point. You can sacrifice some details and grammar for brevity."
+    prompt="$prompt\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   else
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
-    prompt="$prompt, generate a one-line commit message summarizing the changes (max 90 characters)."
+    prompt="$prompt, generate a one-line commit message summarizing the changes (max 72 characters)."
     [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
     prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
     [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional context:\\n$additional_instructions"
-    prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Be concise and to the point. You can sacrifice some details and grammar for brevity."
+    prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   fi
 
   local tmp_resp=$(mktemp /tmp/gcauto_k2p5.XXXXXX)
