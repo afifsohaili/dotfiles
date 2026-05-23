@@ -258,7 +258,7 @@ function gcauto_k2p5() {
   # Remove the surrounding quotes from the JSON-encoded string
   diff_output="${diff_output:1:-1}"
 
-  # 2. Call Fireworks API with different prompts based on flags
+  # 2. Call CrofAI API with different prompts based on flags
   local prompt
   if [ "$detailed" = true ]; then
     prompt="Based on the following git diff"
@@ -279,28 +279,19 @@ function gcauto_k2p5() {
   fi
 
   local tmp_resp=$(mktemp /tmp/gcauto_k2p5.XXXXXX)
-  curl -s -w "\n%{http_code}" -X POST "https://api.fireworks.ai/inference/v1/chat/completions" \
+  curl -s -w "\n%{http_code}" -X POST "https://crof.ai/v1/chat/completions" \
     -H "Accept: application/json" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $FIREWORKS_API_KEY" \
+    -H "Authorization: Bearer $CROF_API_KEY" \
     -d "{
-        \"model\": \"fireworks/kimi-k2p5\",
+        \"model\": \"kimi-k2.6\",
         \"max_tokens\": 4096,
         \"reasoning_effort\": \"none\",
-        \"top_p\": 1,
-        \"top_k\": 40,
-        \"presence_penalty\": 0,
-        \"frequency_penalty\": 0,
         \"temperature\": 0.6,
         \"messages\": [
         {
           \"role\": \"user\",
-          \"content\": [
-            {
-              \"type\": \"text\",
-              \"text\": \"$prompt\"
-            }
-          ]
+          \"content\": \"$prompt\"
         }
         ]
       }" > "$tmp_resp"
@@ -352,7 +343,7 @@ end
   # 3. Write the commit message
   echo "$commit_message" | git commit -F -
 
-  echo "Commit created successfully with fireworks/kimi-k2p5."
+  echo "Commit created successfully with crof.ai/kimi-k2.6."
 }
 
 function makeplan() {
