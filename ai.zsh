@@ -1,11 +1,16 @@
 function gcauto() {
   local use_claude=false
+  local use_deepseek=false
   local forwarded_args=()
 
   while [[ $# -gt 0 ]]; do
     case $1 in
       --claude)
         use_claude=true
+        shift
+        ;;
+      --deepseek)
+        use_deepseek=true
         shift
         ;;
       *)
@@ -17,6 +22,8 @@ function gcauto() {
 
   if [ "$use_claude" = true ]; then
     gcauto_claude "${forwarded_args[@]}"
+  elif [ "$use_deepseek" = true ]; then
+    gcauto_deepseek "${forwarded_args[@]}"
   else
     gcauto_k2p5 "${forwarded_args[@]}"
   fi
@@ -180,7 +187,11 @@ end
   echo "Commit created successfully with claude-sonnet-4-5."
 }
 
-function gcauto_k2p5() {
+function _gcauto_crof() {
+  local model="$1"
+  local model_label="$2"
+  shift 2
+
   # Parse command line options
   local detailed=false
   local context_ref=""
@@ -210,7 +221,7 @@ function gcauto_k2p5() {
         ;;
       *)
         echo "Unknown option: $1"
-        echo "Usage: gcauto_k2p5 [-d|--detailed] [-c|--context <git-ref>]"
+        echo "Usage: gcauto_{$model_label} [-d|--detailed] [-c|--context <git-ref>]"
         return 1
         ;;
     esac
@@ -220,18 +231,16 @@ function gcauto_k2p5() {
   local diff_output=$(git diff --cached)
 
   if [ -z "$diff_output" ]; then
-    echo "No staged changes found. Please stage your changes before running gcauto_k2p5."
+    echo "No staged changes found. Please stage your changes before running gcauto."
     return 1
   fi
 
   # Get context from previous commits if context_ref is provided
   local context=""
   if [ -n "$context_ref" ]; then
-    # Get the list of commits between context_ref and HEAD
     local commits=$(git log --reverse --pretty=format:"%H" $context_ref..HEAD)
 
     if [ -n "$commits" ]; then
-      # Create context using a more robust JSON escaping approach
       context=$(ruby -e '
         require "json"
         commits = ARGV[0].split("\n")
@@ -244,21 +253,18 @@ function gcauto_k2p5() {
         end
         puts JSON.generate(context)
       ' "$commits")
-      # Remove the surrounding quotes from the JSON-encoded string
       context="${context:1:-1}"
     fi
   fi
 
-  # Similarly, use Ruby to escape the diff output more robustly
   diff_output=$(ruby -e '
     require "json"
     diff = `git diff --cached`
     puts JSON.generate(diff)
   ')
-  # Remove the surrounding quotes from the JSON-encoded string
   diff_output="${diff_output:1:-1}"
 
-  # 2. Call CrofAI API with different prompts based on flags
+  # 2. Build prompt
   local prompt
   if [ "$detailed" = true ]; then
     prompt="Based on the following git diff"
@@ -278,13 +284,14 @@ function gcauto_k2p5() {
     prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   fi
 
-  local tmp_resp=$(mktemp /tmp/gcauto_k2p5.XXXXXX)
+  # 3. Call CrofAI API (OpenAI-compatible format)
+  local tmp_resp=$(mktemp /tmp/gcauto_crof.XXXXXX)
   curl -s -w "\n%{http_code}" -X POST "https://crof.ai/v1/chat/completions" \
     -H "Accept: application/json" \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $CROF_API_KEY" \
     -d "{
-        \"model\": \"kimi-k2.6\",
+        \"model\": \"$model\",
         \"max_tokens\": 4096,
         \"reasoning_effort\": \"none\",
         \"temperature\": 0.6,
@@ -297,7 +304,7 @@ function gcauto_k2p5() {
       }" > "$tmp_resp"
 
   local http_status=$(tail -n 1 "$tmp_resp")
-  local body_file=$(mktemp /tmp/gcauto_k2p5_body.XXXXXX)
+  local body_file=$(mktemp /tmp/gcauto_crof_body.XXXXXX)
   sed '$d' "$tmp_resp" > "$body_file"
   rm -f "$tmp_resp"
 
@@ -308,7 +315,6 @@ function gcauto_k2p5() {
     return 1
   fi
 
-  # Use Ruby to parse the response and extract the commit message (OpenAI format)
   local commit_message=$(ruby -r json -e '
 begin
 response = JSON.parse(File.read(ARGV[0]))
@@ -328,22 +334,27 @@ end
 
   rm -f "$body_file"
 
-  # Check if commit_message extraction was successful
   if [ $? -ne 0 ]; then
-    echo "$commit_message"  # This will print the error message from Ruby
+    echo "$commit_message"
     return 1
   fi
 
   if [ -z "$commit_message" ]; then
-    echo "Failed to generate commit message. API response:"
-    cat "$body_file"
+    echo "Failed to generate commit message."
     return 1
   fi
 
-  # 3. Write the commit message
+  # 4. Write the commit message
   echo "$commit_message" | git commit -F -
+  echo "Commit created successfully with crof.ai/$model_label."
+}
 
-  echo "Commit created successfully with crof.ai/kimi-k2.6."
+function gcauto_k2p5() {
+  _gcauto_crof "kimi-k2.6" "kimi-k2.6" "$@"
+}
+
+function gcauto_deepseek() {
+  _gcauto_crof "deepseek-v4-pro" "deepseek-v4-pro" "$@"
 }
 
 function makeplan() {
