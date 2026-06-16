@@ -1,16 +1,15 @@
 function gcauto() {
-  local use_claude=false
-  local use_deepseek=false
+  local vendor="crof"
   local forwarded_args=()
 
   while [[ $# -gt 0 ]]; do
     case $1 in
       --claude)
-        use_claude=true
+        vendor="claude"
         shift
         ;;
-      --deepseek)
-        use_deepseek=true
+      --crof)
+        vendor="crof"
         shift
         ;;
       *)
@@ -20,12 +19,10 @@ function gcauto() {
     esac
   done
 
-  if [ "$use_claude" = true ]; then
+  if [ "$vendor" = "claude" ]; then
     gcauto_claude "${forwarded_args[@]}"
-  elif [ "$use_deepseek" = true ]; then
-    gcauto_deepseek "${forwarded_args[@]}"
   else
-    gcauto_k2p5 "${forwarded_args[@]}"
+    gcauto_crof "${forwarded_args[@]}"
   fi
 }
 
@@ -34,6 +31,7 @@ function gcauto_claude() {
   local detailed=false
   local context_ref=""
   local additional_instructions=""
+  local model="claude-sonnet-4-5"
 
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -57,9 +55,17 @@ function gcauto_claude() {
         additional_instructions="$2"
         shift 2
         ;;
+      --model)
+        if [[ -z "$2" ]]; then
+          echo "Error: --model requires a model id argument"
+          return 1
+        fi
+        model="$2"
+        shift 2
+        ;;
       *)
         echo "Unknown option: $1"
-        echo "Usage: gcauto_claude [-d|--detailed] [-c|--context <git-ref>]"
+        echo "Usage: gcauto_claude [-d|--detailed] [-c|--context <git-ref>] [-a|--additional-instructions <text>] [--model <model-id>]"
         return 1
         ;;
     esac
@@ -132,7 +138,7 @@ function gcauto_claude() {
     -H "x-api-key: $ANTHROPIC_API_KEY" \
     -H "anthropic-version: 2023-06-01" \
     -d "{
-        \"model\": \"claude-sonnet-4-5\",
+        \"model\": \"$model\",
         \"max_tokens\": 1024,
         \"messages\": [
         {
@@ -184,18 +190,15 @@ end
   # 3. Write the commit message
   echo "$commit_message" | git commit -F -
 
-  echo "Commit created successfully with claude-sonnet-4-5."
+  echo "Commit created successfully with $model."
 }
 
 function _gcauto_crof() {
-  local model="$1"
-  local model_label="$2"
-  shift 2
-
   # Parse command line options
   local detailed=false
   local context_ref=""
   local additional_instructions=""
+  local model="deepseek-v4-pro"
 
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -219,9 +222,17 @@ function _gcauto_crof() {
         additional_instructions="$2"
         shift 2
         ;;
+      --model)
+        if [[ -z "$2" ]]; then
+          echo "Error: --model requires a model id argument"
+          return 1
+        fi
+        model="$2"
+        shift 2
+        ;;
       *)
         echo "Unknown option: $1"
-        echo "Usage: gcauto_{$model_label} [-d|--detailed] [-c|--context <git-ref>]"
+        echo "Usage: gcauto_crof [-d|--detailed] [-c|--context <git-ref>] [-a|--additional-instructions <text>] [--model <model-id>]"
         return 1
         ;;
     esac
@@ -346,15 +357,11 @@ end
 
   # 4. Write the commit message
   echo "$commit_message" | git commit -F -
-  echo "Commit created successfully with crof.ai/$model_label."
+  echo "Commit created successfully with crof.ai/$model."
 }
 
-function gcauto_k2p5() {
-  _gcauto_crof "kimi-k2.6" "kimi-k2.6" "$@"
-}
-
-function gcauto_deepseek() {
-  _gcauto_crof "deepseek-v4-pro" "deepseek-v4-pro" "$@"
+function gcauto_crof() {
+  _gcauto_crof "$@"
 }
 
 function makeplan() {

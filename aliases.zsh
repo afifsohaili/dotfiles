@@ -67,3 +67,4 @@ alias yad="yarn add -D"
 alias reload='source ~/.zshrc'
 alias vi="nvim"
 alias vim="nvim"
+

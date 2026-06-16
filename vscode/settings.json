@@ -1,6 +1,5 @@
 {
     "window.commandCenter": 1,
-    "files.autoSave": "onFocusChange",
     "vim.useSystemClipboard": true,
     "vim.leader": ",",
     "vim.handleKeys": {
@@ -214,5 +213,6 @@
         "editor.wordBasedSuggestions": "off"
     },
     "comments.thread.confirmOnCollapse": "never",
-    "window.autoDetectColorScheme": false
+    "window.autoDetectColorScheme": false,
+    "files.autoSave": "afterDelay"
 }
