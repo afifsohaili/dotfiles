@@ -119,17 +119,17 @@ function gcauto_claude() {
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
     prompt="$prompt, generate a detailed commit message with a summary line (max 72 chars) followed by a blank line and then a detailed description of the changes."
-    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
-    prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
-    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional instructions:\\n$additional_instructions"
+    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\n$context"
+    prompt="$prompt\\n\\nCurrent changes:\n$diff_output"
+    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional instructions:\n$additional_instructions"
     prompt="$prompt\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   else
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
     prompt="$prompt, generate a one-line commit message summarizing the changes (max 72 characters)."
-    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
-    prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
-    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional context:\\n$additional_instructions"
+    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\n$context"
+    prompt="$prompt\\n\\nCurrent changes:\n$diff_output"
+    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional context:\n$additional_instructions"
     prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   fi
 
@@ -281,17 +281,17 @@ function _gcauto_crof() {
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
     prompt="$prompt, generate a detailed commit message with a summary line (max 72 chars) followed by a blank line and then a detailed description of the changes."
-    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
-    prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
-    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional instructions:\\n$additional_instructions"
+    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\n$context"
+    prompt="$prompt\\n\\nCurrent changes:\n$diff_output"
+    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional instructions:\n$additional_instructions"
     prompt="$prompt\\n\\nPROVIDE ONLY THE COMMIT MESSAGE AS IS, NO INTRODUCTORY TEXT. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   else
     prompt="Based on the following git diff"
     [ -n "$context" ] && prompt="$prompt and historical context"
     prompt="$prompt, generate a one-line commit message summarizing the changes (max 72 characters)."
-    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\\n$context"
-    prompt="$prompt\\n\\nCurrent changes:\\n$diff_output"
-    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional context:\\n$additional_instructions"
+    [ -n "$context" ] && prompt="$prompt\\n\\nContext:\n$context"
+    prompt="$prompt\\n\\nCurrent changes:\n$diff_output"
+    [ -n "$additional_instructions" ] && prompt="$prompt\\n\\nAdditional context:\n$additional_instructions"
     prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   fi
 
@@ -362,26 +362,4 @@ end
 
 function gcauto_crof() {
   _gcauto_crof "$@"
-}
-
-function makeplan() {
-    if [ -z "$1" ]; then
-        echo "Usage: makeplan <plan>"
-        return 1
-    fi
-    # if there's no .git, raise an error
-    if [ ! -d .git ]; then
-        echo "Error: Not a git repository"
-        return 1
-    fi
-    # if there's no plans directory, create it
-    if [ ! -d plans ]; then
-        mkdir -p plans
-    fi
-    mkdir -p plans/$1
-    mkdir -p plans/$1/screens
-    touch plans/$1/plan-$1.md
-
-    # include in .gitignore
-    echo "!plans/$1" >> .gitignore
 }
