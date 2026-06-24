@@ -52,6 +52,7 @@
   autocrlf = false
   editor = nvim
   excludesfile = ~/Projects/dotfiles/git/gitignore
+  pager = delta --pager='ov -F'
 [advice]
   statusHints = false
 [diff]
@@ -75,3 +76,24 @@
 	email = afifnajib@gmail.com
 [rebase]
 	instructionFormat = (%an <%ae>) %s
+
+[pager]
+	show = delta --pager='ov -F --header 3'
+	diff = delta --features ov-diff
+	log = delta --features ov-log
+
+[delta]
+	navigate = true
+	side-by-side = false
+  line-numbers = true
+	file-style = yellow
+	plus-style = syntax "#004800"
+	minus-style = syntax "#550000"
+	plus-emph-style = syntax "#008800"
+	minus-emph-style = syntax "#770000"
+
+[delta "ov-diff"]
+	pager = ov -F --section-delimiter '^(commit|added:|removed:|renamed:|Δ)' --section-header --pattern '•'
+
+[delta "ov-log"]
+	pager = ov -F --section-delimiter '^commit' --section-header-num 3
