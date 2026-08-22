@@ -198,7 +198,7 @@ function _gcauto_crof() {
   local detailed=false
   local context_ref=""
   local additional_instructions=""
-  local model="deepseek-v4-pro"
+  local model="deepseek-v4-flash-0731"
 
   while [[ $# -gt 0 ]]; do
     case $1 in

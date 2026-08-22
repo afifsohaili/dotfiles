@@ -8,5 +8,5 @@ function oc() {
       i=$((i + 1))
     done
   fi
-  opencode attach http://0.0.0.0:15001 --dir `pwd`
+  opencode attach http://0.0.0.0:15001 --dir `pwd` $1
 }
