@@ -1,5 +1,15 @@
 
 function oc() {
+  reload
+  if [ "$1" = "--restart" ]; then
+    pkill opencode
+    shift
+    local i=0
+    while lsof -i:15001 >/dev/null 2>&1 && [ $i -lt 20 ]; do
+      sleep 0.5
+      i=$((i + 1))
+    done
+  fi
   if ! lsof -i:15001 >/dev/null 2>&1; then
     opencode serve --port 15001 --hostname 0.0.0.0 &
     local i=0

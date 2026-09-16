@@ -1,5 +1,5 @@
 function gcauto() {
-  local vendor="crof"
+  local vendor="openrouter"
   local forwarded_args=()
 
   while [[ $# -gt 0 ]]; do
@@ -8,8 +8,8 @@ function gcauto() {
         vendor="claude"
         shift
         ;;
-      --crof)
-        vendor="crof"
+      --openrouter)
+        vendor="openrouter"
         shift
         ;;
       *)
@@ -22,7 +22,7 @@ function gcauto() {
   if [ "$vendor" = "claude" ]; then
     gcauto_claude "${forwarded_args[@]}"
   else
-    gcauto_crof "${forwarded_args[@]}"
+    gcauto_openrouter "${forwarded_args[@]}"
   fi
 }
 
@@ -193,12 +193,12 @@ end
   echo "Commit created successfully with $model."
 }
 
-function _gcauto_crof() {
+function _gcauto_openrouter() {
   # Parse command line options
   local detailed=false
   local context_ref=""
   local additional_instructions=""
-  local model="deepseek-v4-flash-0731"
+  local model="deepseek/deepseek-v4-flash-0731:floor"
 
   while [[ $# -gt 0 ]]; do
     case $1 in
@@ -232,7 +232,7 @@ function _gcauto_crof() {
         ;;
       *)
         echo "Unknown option: $1"
-        echo "Usage: gcauto_crof [-d|--detailed] [-c|--context <git-ref>] [-a|--additional-instructions <text>] [--model <model-id>]"
+        echo "Usage: gcauto_openrouter [-d|--detailed] [-c|--context <git-ref>] [-a|--additional-instructions <text>] [--model <model-id>]"
         return 1
         ;;
     esac
@@ -295,12 +295,12 @@ function _gcauto_crof() {
     prompt="$prompt\\n\\nPROVIDE ONLY THE ONE LINE GIT COMMIT MESSAGE AS IS, NEVER INCLUDE ANY IRRELEVANT THINGS. Do NOT use 'feat:', 'fix:', 'chore:', or any other prefix. Be concise and to the point. You can sacrifice some details and grammar for brevity."
   fi
 
-  # 3. Call CrofAI API (OpenAI-compatible format)
-  local tmp_resp=$(mktemp /tmp/gcauto_crof.XXXXXX)
-  curl -s -w "\n%{http_code}" -X POST "https://crof.ai/v1/chat/completions" \
+  # 3. Call OpenRouter API (OpenAI-compatible format)
+  local tmp_resp=$(mktemp /tmp/gcauto_openrouter.XXXXXX)
+  curl -s -w "\n%{http_code}" -X POST "https://openrouter.ai/api/v1/chat/completions" \
     -H "Accept: application/json" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $CROF_API_KEY" \
+    -H "Authorization: Bearer $OPENROUTER_API_KEY" \
     -d "{
         \"model\": \"$model\",
         \"max_tokens\": 4096,
@@ -315,7 +315,7 @@ function _gcauto_crof() {
       }" > "$tmp_resp"
 
   local http_status=$(tail -n 1 "$tmp_resp")
-  local body_file=$(mktemp /tmp/gcauto_crof_body.XXXXXX)
+  local body_file=$(mktemp /tmp/gcauto_openrouter_body.XXXXXX)
   sed '$d' "$tmp_resp" > "$body_file"
   rm -f "$tmp_resp"
 
@@ -357,9 +357,9 @@ end
 
   # 4. Write the commit message
   echo "$commit_message" | git commit -F -
-  echo "Commit created successfully with crof.ai/$model."
+  echo "Commit created successfully with openrouter.ai/$model."
 }
 
-function gcauto_crof() {
-  _gcauto_crof "$@"
+function gcauto_openrouter() {
+  _gcauto_openrouter "$@"
 }
