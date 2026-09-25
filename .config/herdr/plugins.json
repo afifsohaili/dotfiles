@@ -1,0 +1,144 @@
+[
+  {
+    "plugin_id": "herdr-arrange",
+    "name": "Arrange",
+    "version": "0.2.0",
+    "min_herdr_version": "0.7.4",
+    "description": "Rearrange panes from a popup: swap, re-split, resize, presets, cross-tab moves",
+    "manifest_path": "/Users/afifsohaili/.config/herdr/plugins/github/herdr-arrange-190165799434/herdr-plugin.toml",
+    "plugin_root": "/Users/afifsohaili/.config/herdr/plugins/github/herdr-arrange-190165799434",
+    "enabled": true,
+    "platforms": [
+      "macos",
+      "linux"
+    ],
+    "build": [
+      {
+        "command": [
+          "go",
+          "build",
+          "-trimpath",
+          "-o",
+          "bin/arrange",
+          "."
+        ]
+      }
+    ],
+    "startup": [
+      {
+        "command": [
+          "bin/arrange",
+          "drain"
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "open",
+        "title": "Arrange panes",
+        "description": "Swap, re-split, resize and lay out the panes of this tab",
+        "contexts": [
+          "pane"
+        ],
+        "command": [
+          "bin/arrange",
+          "open"
+        ]
+      },
+      {
+        "id": "open-tree",
+        "title": "Arrange: move pane to…",
+        "description": "Send this pane to another tab or workspace, or swap it with any pane",
+        "contexts": [
+          "pane"
+        ],
+        "command": [
+          "bin/arrange",
+          "open-tree"
+        ]
+      }
+    ],
+    "panes": [
+      {
+        "id": "ui",
+        "title": "Arrange",
+        "placement": "popup",
+        "width": 63,
+        "height": 23,
+        "command": [
+          "sh",
+          "-c",
+          "exec \"$HERDR_PLUGIN_ROOT/bin/arrange\" ui"
+        ]
+      }
+    ],
+    "source": {
+      "kind": "github",
+      "owner": "crierr",
+      "repo": "herdr-arrange",
+      "resolved_commit": "69a5921ba9c8cc4de1788fe5251ebecf5d3278ac",
+      "managed_path": "/Users/afifsohaili/.config/herdr/plugins/github/herdr-arrange-190165799434",
+      "installed_unix_ms": 1788248201231
+    }
+  },
+  {
+    "plugin_id": "numbered-workspaces",
+    "name": "Numbered Workspaces",
+    "version": "0.3.0",
+    "min_herdr_version": "0.7.4",
+    "description": "Mirror each space's ordinal into a metadata token so the sidebar can show it.",
+    "manifest_path": "/Users/afifsohaili/.config/herdr/plugins/github/numbered-workspaces-b180d9d59454/herdr-plugin.toml",
+    "plugin_root": "/Users/afifsohaili/.config/herdr/plugins/github/numbered-workspaces-b180d9d59454",
+    "enabled": true,
+    "platforms": [
+      "linux",
+      "macos"
+    ],
+    "actions": [
+      {
+        "id": "renumber",
+        "title": "Renumber spaces",
+        "contexts": [
+          "global"
+        ],
+        "command": [
+          "./renumber.sh"
+        ]
+      }
+    ],
+    "events": [
+      {
+        "on": "workspace.closed",
+        "command": [
+          "./renumber.sh"
+        ]
+      },
+      {
+        "on": "workspace.created",
+        "command": [
+          "./renumber.sh"
+        ]
+      },
+      {
+        "on": "workspace.focused",
+        "command": [
+          "./renumber.sh"
+        ]
+      },
+      {
+        "on": "workspace.moved",
+        "command": [
+          "./renumber.sh"
+        ]
+      }
+    ],
+    "source": {
+      "kind": "github",
+      "owner": "abrose",
+      "repo": "herdr-numbered-workspaces",
+      "resolved_commit": "a204b92ddecf177d5ade2279e65cf193139762fb",
+      "managed_path": "/Users/afifsohaili/.config/herdr/plugins/github/numbered-workspaces-b180d9d59454",
+      "installed_unix_ms": 1786580213022
+    }
+  }
+]

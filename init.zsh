@@ -1,5 +1,2 @@
-for config_file ($HOME/Projects/dotfiles/**/*.zsh(N)) do
-  if [ "$config_file" != "$HOME/Projects/dotfiles/init.zsh" ]; then
-    source $config_file
-  fi
-done
+# Entry point sourced from ~/.zshrc. Delegates to zsh/init.zsh.
+source "$HOME/Projects/dotfiles/zsh/init.zsh"

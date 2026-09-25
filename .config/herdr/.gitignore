@@ -1,0 +1,7 @@
+*.sock
+*.log
+session.json
+release-notes.json
+config.toml.bak
+plugins/
+.plugins.lock

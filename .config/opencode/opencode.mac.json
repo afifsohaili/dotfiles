@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "bash": {
+      "rm /Users/afifsohaili/Tiga/*": "allow",
+      "rm /Users/afifsohaili/Projects/*": "allow"
+    },
+    "external_directory": {
+      "~/Desktop/CleanShot *": "allow"
+    }
+  },
+  "mcp": {
+    "pencil": {
+      "command": [
+        "/Applications/Pen.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
+        "--app",
+        "desktop",
+        "--agent",
+        "openCodeCLI"
+      ],
+      "enabled": true,
+      "type": "local"
+    }
+  }
+}

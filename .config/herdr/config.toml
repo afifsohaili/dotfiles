@@ -1,0 +1,59 @@
+onboarding = false
+[theme]
+name = "tokyo-night"
+auto_switch = false
+
+[ui.toast]
+delivery = "system"
+
+[ui]
+show_agent_labels_on_pane_borders = true
+
+[ui.sidebar.spaces]
+rows = [
+  ["state_icon", "$num", "workspace"],
+  ["branch", "git_status"],
+]
+
+[keys]
+prefix = "ctrl+a"
+
+# settings moved off prefix+s (now split horizontal)
+settings = "prefix+."
+
+# prefix+s -> split horizontal (tmux-style); replaces default prefix+minus
+split_horizontal = "prefix+s"
+
+# tmux-like window numbers -> tabs; shift+number -> workspaces
+switch_tab = "prefix+1..9"
+switch_workspace = "prefix+shift+1..9"
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
+
+# tmux prefix+q -> goto/session navigator
+goto = "prefix+q"
+
+# detach moved off prefix+q
+detach = "prefix+d"
+
+# agent navigation
+previous_agent = "prefix+shift+a"
+next_agent = "prefix+a"
+focus_agent = "prefix+alt+1..9"
+
+# prefix+k now clears the pane (tmux-style); focus up is unbound
+focus_pane_up = ""
+
+# prefix+k -> clear pane: wipe scrollback + screen at a shell prompt,
+# toast (no-op) while an agent/app is foreground.
+[[keys.command]]
+key = "prefix+k"
+type = "shell"
+description = "Clear pane screen and scrollback"
+command = "$HOME/.config/herdr/scripts/clear-pane.sh"
+
+[[keys.command]]
+key = "prefix+space"
+type = "plugin_action"
+command = "herdr-arrange.open"
+description = "arrange panes"
