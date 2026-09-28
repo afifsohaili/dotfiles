@@ -5,12 +5,35 @@
       "rm ./*": "allow"
     },
     "question": "allow",
+    "websearch": "allow",
+    "webfetch": "allow",
     "external_directory": {
+      "*": "ask",
       "/tmp/*": "allow",
+      "~/.config/opencode": "allow",
       "~/.config/opencode/*": "allow",
+      "~/.config/mise": "allow",
+      "~/.config/mise/*": "allow",
+      "~/.config/herdr": "allow",
+      "~/.config/herdr/*": "allow",
+      "~/.config/omarchy": "allow",
+      "~/.config/omarchy/*": "allow",
+      "~/.config/hypr": "allow",
+      "~/.config/hypr/*": "allow",
+      "~/.config/alacritty": "allow",
+      "~/.config/alacritty/*": "allow",
+      "~/.config/foot": "allow",
+      "~/.config/foot/*": "allow",
+      "~/.config/kitty": "allow",
+      "~/.config/kitty/*": "allow",
+      "~/.config/ghostty": "allow",
+      "~/.config/ghostty/*": "allow",
       "~/.opencode/*": "allow",
       "~/Tiga/*": "allow",
-      "~/Projects/*": "allow"
+      "~/Projects": "allow",
+      "~/Projects/*": "allow",
+      "~/Work": "allow",
+      "~/Work/*": "allow"
     },
     "read": {
       "*": "allow",
@@ -25,10 +48,24 @@
   "plugin": [
     "./plugin/notify.ts",
     "./plugin/rm-guard.ts",
-    "@tarquinen/opencode-dcp@latest",
+    "opencode-tasks",
     "opencode-history-search",
     "@franlol/opencode-md-table-formatter@latest"
   ],
+  "references": {
+    "projects": {
+      "path": "~/Projects",
+      "description": "Use for personal projects in ~/Projects"
+    },
+    "dotfiles": {
+      "path": "~/Projects/dotfiles",
+      "description": "Use for personal shell, editor, and tool configuration conventions"
+    },
+    "mise": {
+      "path": "~/.config/mise",
+      "description": "Use for mise tool version config and task definitions"
+    }
+  },
   "default_agent": "ollama-dsv4f",
   "agent": {
     "explore": {
@@ -40,9 +77,15 @@
     "websearch": {
       "type": "local",
       "command": [
-        "duckduckgo-mcp-server"
+        "uv",
+        "run",
+        "{env:HOME}/.config/opencode/mcp/ollama/web-search-mcp.py"
       ],
-      "enabled": true
+      "environment": {
+        "OLLAMA_API_KEY": "{file:~/.local/share/opencode/secrets/ollama_api_key}"
+      },
+      "enabled": true,
+      "timeout": 120000
     }
   },
   "provider": {
