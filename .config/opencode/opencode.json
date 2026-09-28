@@ -48,9 +48,9 @@
   "plugin": [
     "./plugin/notify.ts",
     "./plugin/rm-guard.ts",
-    "opencode-tasks",
     "opencode-history-search",
-    "@franlol/opencode-md-table-formatter@latest"
+    "@franlol/opencode-md-table-formatter@latest",
+    "opencode-tasks"
   ],
   "references": {
     "projects": {
