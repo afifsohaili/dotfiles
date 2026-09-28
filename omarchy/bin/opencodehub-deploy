@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Pull, build, and restart OpenCodeHub on this machine.
+#
+# Run directly, or as the oneshot unit:
+#   systemctl --user start opencodehub-deploy.service
+set -euo pipefail
+
+REPO="${OPENCODEHUB_REPO:-$HOME/Projects/opencodehub}"
+
+if [ ! -d "$REPO" ]; then
+  echo "opencodehub repo not found at $REPO" >&2
+  echo "set OPENCODEHUB_REPO to override" >&2
+  exit 1
+fi
+
+cd "$REPO"
+
+# mise shims resolve node from the repo's .tool-versions (24.14.0).
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+git pull --ff-only
+pnpm install
+pnpm build
+systemctl --user restart opencodehub.service

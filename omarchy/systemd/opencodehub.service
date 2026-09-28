@@ -1,0 +1,21 @@
+[Unit]
+Description=OpenCodeHub web UI
+Documentation=https://github.com/afifsohaili/opencodehub
+After=network-online.target opencode-server.service
+Wants=network-online.target opencode-server.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Projects/opencodehub
+EnvironmentFile=-%h/Projects/opencodehub/apps/web/.env.local
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=3000
+# Redis is not installed; keep the dormant BullMQ email worker from starting.
+Environment=NUXT_DISABLE_EMAIL_WORKER=1
+ExecStart=%h/.local/share/mise/shims/node apps/web/.output/server/index.mjs
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target
