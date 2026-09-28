@@ -1,6 +1,9 @@
 export PATH="$PATH:$HOME/Projects/dotfiles/git/bin"
 export PATH="$PATH:$HOME/Projects/dotfiles/bin"
-zstyle ':completion:*:*' ignored-patterns '*ORIG_HEAD'
+
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+  zstyle ':completion:*:*' ignored-patterns '*ORIG_HEAD'
+fi
 
 alias cb="git_current_branch"
 alias griom="git rebase -i origin/master"

@@ -1,6 +1,6 @@
 # Secrets and machine-local values.
 # Tracked as a template with empty values. Fill in locally, then run:
-#   git update-index --skip-worktree zsh/shared/secrets.zsh
+#   git update-index --skip-worktree shell/shared/secrets.sh
 # so local values never enter git.
 export ANTHROPIC_API_KEY=""
 export OPENROUTER_API_KEY=""

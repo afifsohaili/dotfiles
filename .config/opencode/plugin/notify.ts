@@ -52,6 +52,7 @@ const notifyOnce = (key: string, ttlMs: number, fn: () => Promise<void>) => {
 
 export default (async ({ $, directory }) => {
   const projectName = directory.split("/").pop() || "unknown project";
+  const isMac = process.platform === "darwin";
 
   const notifyDesktop = async ({
     title,
@@ -62,6 +63,11 @@ export default (async ({ $, directory }) => {
     subtitle: string;
     message?: string;
   }) => {
+    if (!isMac) {
+      // Linux/Omarchy desktop notifications go through the Omarchy helper.
+      await $`omarchy-notification-send -g 󰚩 ${message} ${subtitle}`.catch(() => {});
+      return;
+    }
     // Pass content as argv so Bun shell-escapes each argument; AppleScript
     // never sees quotes/backslashes in the content, so it can't break the
     // string literal (fixes syntax error -2740 on details containing ").

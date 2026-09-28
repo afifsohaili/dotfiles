@@ -1,3 +1,6 @@
 node_modules
 package.json
 bun.lock
+.tasks.db
+.tasks.db-shm
+.tasks.db-wal

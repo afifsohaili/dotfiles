@@ -1,3 +1,16 @@
+# Open a URL in the platform browser.
+if [[ -z "${DOTFILES_OPEN_CMD:-}" ]]; then
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    DOTFILES_OPEN_CMD="open"
+  else
+    DOTFILES_OPEN_CMD="xdg-open"
+  fi
+fi
+
+_dotfiles_open() {
+  "$DOTFILES_OPEN_CMD" "$@" >/dev/null 2>&1
+}
+
 create_github_pr () {
   # get the remote url and lowercase it
   local REMOTE=`git remote get-url --push origin | tr '[:upper:]' '[:lower:]'`
@@ -10,7 +23,7 @@ create_github_pr () {
   # open the pull request page
   BRANCH_NAME=`git rev-parse --abbrev-ref HEAD`
   echo "Creating pull request at: $REMOTE/pull/new/$BRANCH_NAME"
-  open $REMOTE/pull/new/$BRANCH_NAME
+  _dotfiles_open $REMOTE/pull/new/$BRANCH_NAME
 }
 
 get_pr_number () {
@@ -38,12 +51,12 @@ function open_on_github() {
     # if pushed to remote, get the current commit hash, otherwise get master ref
     if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
       CURRENT_COMMIT=`git rev-parse HEAD`
-      open $REMOTE/blob/$CURRENT_COMMIT/$FILE_NAME
+      _dotfiles_open $REMOTE/blob/$CURRENT_COMMIT/$FILE_NAME
     else
       CURRENT_COMMIT=`git rev-parse master`
-      open $REMOTE/blob/$CURRENT_COMMIT/$FILE_NAME
+      _dotfiles_open $REMOTE/blob/$CURRENT_COMMIT/$FILE_NAME
     fi
   else
-    open $REMOTE
+    _dotfiles_open $REMOTE
   fi
 }

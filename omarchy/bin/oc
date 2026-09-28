@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Open an interactive opencode TUI attached to the shared server on 15001,
+# starting it first if it is not already running.
+
+PORT=15001
+HOST=0.0.0.0
+
+# Target directory precedence:
+#   1. an explicit argument,
+#   2. the current directory, so `oc` run inside a project targets that project,
+#   3. ~/Projects for launches with no meaningful cwd. The SUPER+SHIFT+O binding
+#      and the Omarchy menu start in $HOME, which agents refuse to remember
+#      trust for, so they fall back to the projects root.
+DIR=${1:-}
+if [[ -z $DIR ]]; then
+  if [[ $PWD != "$HOME" && $PWD != "/" ]]; then
+    DIR=$PWD
+  else
+    DIR=$HOME/Projects
+  fi
+fi
+
+listening() {
+  ss -ltn "sport = :$PORT" 2>/dev/null | grep -q LISTEN
+}
+
+if ! listening; then
+  if systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
+    systemctl --user start opencode-server.service
+  else
+    setsid nohup opencode serve --port "$PORT" --hostname "$HOST" >/dev/null 2>&1 &
+  fi
+
+  for _ in {1..60}; do
+    listening && break
+    sleep 0.5
+  done
+fi
+
+if ! listening; then
+  echo "opencode server on :$PORT did not come up" >&2
+  exit 1
+fi
+
+exec opencode attach "http://127.0.0.1:$PORT" --dir "$DIR" --continue

@@ -1,0 +1,14 @@
+[Unit]
+Description=opencode shared server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%h/.config/opencode/opencode.env
+ExecStart=%h/.local/share/mise/shims/opencode serve --port 15001 --hostname 0.0.0.0
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

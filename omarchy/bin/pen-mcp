@@ -1,0 +1,19 @@
+#!/bin/bash
+# Locate the Pen/Pencil MCP server binary and exec it with opencode args.
+# The Linux AppImage only exposes the binary inside its transient mount, so
+# probe the live mount first, then a stable extracted copy if one exists.
+set -euo pipefail
+
+for candidate in \
+  /tmp/.mount_pen*/resources/app.asar.unpacked/out/mcp-server-linux-x64 \
+  "$HOME/.local/opt/pen/resources/app.asar.unpacked/out/mcp-server-linux-x64" \
+  "$HOME/.local/share/pen/resources/app.asar.unpacked/out/mcp-server-linux-x64"; do
+  for binary in $candidate; do
+    if [ -x "$binary" ]; then
+      exec "$binary" "$@"
+    fi
+  done
+done
+
+echo "pen-mcp: mcp-server-linux-x64 not found; launch Pen once so its AppImage is mounted" >&2
+exit 1

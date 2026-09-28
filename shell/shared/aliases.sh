@@ -1,7 +1,11 @@
 # From YADR
 alias psa="ps aux"
-alias ll='ls -alGh'
-alias ls='ls -Gh'
+# BSD ls flags (-G color, -h human). Omarchy owns ls/ll on Linux (eza), so only
+# override where coreutils' ls is the macOS one.
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  alias ll='ls -alGh'
+  alias ls='ls -Gh'
+fi
 
 # Git Aliases
 alias gs='git status'
@@ -9,7 +13,13 @@ alias gps='git push'
 alias gst='git stash'
 alias gcm='git commit -m'
 alias gco='git checkout'
-alias ga='git add -A'
+# ga/gd must be functions, not aliases: Omarchy ships ga()/gd() worktree helpers
+# in default/bash/fns/worktrees. A live alias with either name makes bash expand
+# it inside that file's function definition when the Omarchy rc is re-sourced on
+# reload ("syntax error near unexpected token `('"). The unalias guard also
+# clears the alias left by a shell that predates this change.
+unalias ga gd 2>/dev/null || true
+ga() { git add -A "$@"; }
 alias gr='git rebase'
 alias gri='git rebase -i'
 alias grc='git rebase --continue'
@@ -17,7 +27,7 @@ alias gra='git rebase --abort'
 alias gl='git log --graph --date=short'
 alias gf='git fetch'
 alias gfp='git fetch --prune'
-alias gd='git diff'
+gd() { git diff "$@"; }
 alias gb='git branch -v'
 alias gpl='git pull'
 alias gplr='git pull --rebase'
@@ -59,7 +69,15 @@ alias ya="yarn add"
 alias yr="yarn remove"
 alias yad="yarn add -D"
 
-alias reload='source ~/.zshrc'
-alias vi="nvim"
-alias vim="nvim"
+case "$(uname -s)" in
+  Darwin)
+    alias reload='source ~/.zshrc'
+    alias vi="nvim"
+    alias vim="nvim"
+    ;;
+  Linux)
+    alias reload='source ~/.bashrc'
+    [ -z "${EDITOR:-}" ] && alias vi="nvim" && alias vim="nvim"
+    ;;
+esac
 
