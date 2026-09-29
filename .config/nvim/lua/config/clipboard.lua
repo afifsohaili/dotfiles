@@ -9,6 +9,11 @@
 -- pcall-guarded, so ancestor detection fails closed on macOS where /proc
 -- does not exist. Outside tmux/SSH/herdr, setup() returns early and the
 -- native clipboard provider stays in charge.
+--
+-- macOS local sessions return early too: panes run locally even inside
+-- tmux/herdr, so pbcopy/pbpaste is correct, and neither tmux nor herdr
+-- answers OSC 52 read queries (herdr #3136, #4509), so the OSC 52 paste
+-- fallback would hang for 10s on every paste.
 local M = {}
 
 local function proc_lines(pid, file)
@@ -51,6 +56,11 @@ function M.setup()
   local in_herdr = vim.env.HERDR_PANE_ID ~= nil or ancestor_process_named("herdr")
 
   if not (in_tmux or in_ssh or in_herdr) then
+    return
+  end
+
+  -- Local macOS panes keep the native pbcopy/pbpaste provider.
+  if vim.fn.has("mac") == 1 and not in_ssh then
     return
   end
 
