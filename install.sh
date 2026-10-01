@@ -129,6 +129,24 @@ if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
   run systemctl --user daemon-reload
 
+  # pnpm global-install policy. pnpm v11 resolves bare imports from a hoisted
+  # node_modules only; @pen.dev/cli imports css-tree without declaring it, so the
+  # default isolated layout breaks `pen`. This file is read whenever a global
+  # command runs from $PNPM_HOME. minimumReleaseAge is deliberately left alone:
+  # the CLI needs its newest release, so upgrade it with
+  # `pnpm add -g @pen.dev/cli@latest --config.minimumReleaseAge=0`.
+  PNPM_HOME="${PNPM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/pnpm}"
+  pnpm_global_dir="$PNPM_HOME/global/v11"
+  pnpm_workspace="$pnpm_global_dir/pnpm-workspace.yaml"
+  if [ -d "$pnpm_global_dir" ] && [ ! -e "$pnpm_workspace" ]; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] write %s: nodeLinker: hoisted\n' "$pnpm_workspace"
+    else
+      printf 'nodeLinker: hoisted\n' > "$pnpm_workspace"
+      say "wrote $pnpm_workspace"
+    fi
+  fi
+
   # Timers shipped with the repo are opt-in units, not services: enable the
   # ones we know about so the data they refresh stays current on a fresh box.
   for timer in omarchy-agent-usage-ollama.timer; do

@@ -1,19 +1,57 @@
 #!/bin/bash
 # Locate the Pen/Pencil MCP server binary and exec it with opencode args.
-# The Linux AppImage only exposes the binary inside its transient mount, so
-# probe the live mount first, then a stable extracted copy if one exists.
+#
+# Preferred source is @pen.dev/cli installed globally with pnpm v11. Global
+# installs live in isolated dirs at $PNPM_HOME/global/v11/<hash>/, and the hash
+# is not predictable, so resolve the active install through the `pen` shim pnpm
+# writes into $PNPM_HOME/bin: its cmd-shim-target comment names the exact
+# dist/index.mjs, and the MCP binary sits beside it at dist/out/.
+# Falls back to a glob of the v11 dirs, then to the desktop AppImage mount.
 set -euo pipefail
 
-for candidate in \
-  /tmp/.mount_pen*/resources/app.asar.unpacked/out/mcp-server-linux-x64 \
-  "$HOME/.local/opt/pen/resources/app.asar.unpacked/out/mcp-server-linux-x64" \
-  "$HOME/.local/share/pen/resources/app.asar.unpacked/out/mcp-server-linux-x64"; do
-  for binary in $candidate; do
-    if [ -x "$binary" ]; then
-      exec "$binary" "$@"
+PNPM_HOME="${PNPM_HOME:-${XDG_DATA_HOME:-$HOME/.local/share}/pnpm}"
+
+resolve_cli_mcp() {
+  local shim="$PNPM_HOME/bin/pen" target candidate
+  if [ -r "$shim" ]; then
+    target="$(sed -n 's/^# cmd-shim-target=//p' "$shim" | tail -1)"
+    case "$target" in
+      */@pen.dev/cli/dist/index.mjs)
+        printf '%s\n' "${target%index.mjs}out/mcp-server-linux-x64"
+        return 0
+        ;;
+    esac
+  fi
+  for candidate in \
+    "$PNPM_HOME"/global/v11/*/node_modules/@pen.dev/cli/dist/out/mcp-server-linux-x64; do
+    if [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
     fi
   done
-done
+  return 1
+}
 
-echo "pen-mcp: mcp-server-linux-x64 not found; launch Pen once so its AppImage is mounted" >&2
-exit 1
+binary="$(resolve_cli_mcp || true)"
+
+if [ -z "$binary" ]; then
+  for candidate in \
+    /tmp/.mount_pen*/resources/app.asar.unpacked/out/mcp-server-linux-x64 \
+    "$HOME/.local/opt/pen/resources/app.asar.unpacked/out/mcp-server-linux-x64" \
+    "$HOME/.local/share/pen/resources/app.asar.unpacked/out/mcp-server-linux-x64"; do
+    for f in $candidate; do
+      if [ -x "$f" ]; then
+        binary="$f"
+        break 2
+      fi
+    done
+  done
+fi
+
+if [ -z "$binary" ]; then
+  echo "pen-mcp: no MCP server binary found." >&2
+  echo "pen-mcp: install it with 'pnpm add -g @pen.dev/cli', or launch the Pen desktop app." >&2
+  exit 1
+fi
+
+exec "$binary" "$@"
