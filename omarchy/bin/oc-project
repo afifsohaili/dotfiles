@@ -2,8 +2,8 @@
 
 # oc-project: choose a directory and open the shared opencode TUI on it.
 #
-# Phase 1 implements only `oc-project list`, the row builder. It emits one
-# menu row per directory, in the exact format `omarchy-menu-select` expects:
+# `oc-project list` is the row builder. It emits one menu row per directory,
+# in the exact format `omarchy-menu-select` expects:
 #
 #     <TAB><basename><TAB><abs path>
 #
@@ -18,18 +18,40 @@
 # tolerated: a missing sqlite3, DB, table, or projects dir yields whatever
 # rows remain, never an error.
 #
+# `oc-project pick` (the default when no subcommand is given) builds the same
+# rows, prepends an empty-icon `Other…` row, and hands them to the menu.
+#
+#     <TAB>Other…<TAB>
+#
+# The menu returns `<basename><TAB><abs path>` for a directory row, or the
+# `Other…` row itself; the latter chains to `omarchy-menu-input` for a typed
+# path. The resolved canonical directory is printed, nothing else. Launching
+# opencode is a later phase.
+#
 # Testability seams (see omarchy/plans/oc-project.md):
 #   OC_PROJECT_OPENCODE_DB   default $HOME/.local/share/opencode/opencode.db
 #   OC_PROJECT_PROJECTS_DIR  default $HOME/Projects
+#   OC_PROJECT_MENU_SELECT   default omarchy-menu-select
+#   OC_PROJECT_MENU_INPUT    default omarchy-menu-input
 
 # omarchy:summary=Open the opencode picker, or list candidate directories
-# omarchy:args=[list]
-# omarchy:examples=oc-project list
+# omarchy:args=[pick|list]
+# omarchy:examples=oc-project pick|oc-project list
 
 set -euo pipefail
 
 OPENCODE_DB="${OC_PROJECT_OPENCODE_DB:-$HOME/.local/share/opencode/opencode.db}"
 PROJECTS_DIR="${OC_PROJECT_PROJECTS_DIR:-$HOME/Projects}"
+MENU_SELECT="${OC_PROJECT_MENU_SELECT:-omarchy-menu-select}"
+MENU_INPUT="${OC_PROJECT_MENU_INPUT:-omarchy-menu-input}"
+
+# Sentinel row, in the menu row format: empty glyph column, `Other…` label,
+# empty subtext (a directory row always carries a non-empty absolute path).
+# The menu strips the glyph column and drops an empty subtext, so the sentinel
+# comes back as the bare label. A directory named `Other…` comes back as
+# `Other…\t<path>` and is therefore distinguishable.
+OTHER_ROW=$'\tOther…\t'
+OTHER_SELECTION='Other…'
 
 # ---------------------------------------------------------------- helpers
 
@@ -115,11 +137,70 @@ cmd_list() {
   return 0
 }
 
+# -------------------------------------------------------- path resolving
+
+# resolve_input <typed> -> canonical directory on stdout, or 1.
+# Expands a leading `~`, resolves relative paths against $PWD, then
+# canonicalises. Fails unless the result is an existing directory.
+resolve_input() {
+  local typed="$1" path canon
+  [[ -n $typed ]] || return 1
+
+  case "$typed" in
+    "~") path="$HOME" ;;
+    "~/"*) path="$HOME/${typed#\~/}" ;;
+    /*) path="$typed" ;;
+    *) path="$PWD/$typed" ;;
+  esac
+
+  canon="$(readlink -f -- "$path" 2>/dev/null)" || return 1
+  [[ -d $canon ]] || return 1
+  printf '%s\n' "$canon"
+}
+
+# notify_error <message> -> best-effort desktop notification; never fatal.
+notify_error() {
+  command -v omarchy-notification-send >/dev/null 2>&1 || return 0
+  omarchy-notification-send "oc-project" "$1" >/dev/null 2>&1 || true
+}
+
+# ------------------------------------------------------------------ pick
+
+# Print the menu rows: the Other… row first, then the list rows.
+cmd_pick_rows() {
+  printf '%s\n' "$OTHER_ROW"
+  cmd_list
+}
+
+# cmd_pick -> canonical directory on stdout; 0 on a valid pick.
+# Non-zero with no stdout on cancel (quiet) or an invalid path (stderr + notify).
+cmd_pick() {
+  local selection path
+
+  # A cancel at either menu (non-zero) is propagated quietly: no message,
+  # no stdout. The `|| return $?` keeps `set -e` from aborting and preserves
+  # the menu's real exit status.
+  selection="$(cmd_pick_rows | "$MENU_SELECT" 'Open opencode in…')" || return $?
+
+  if [[ $selection == "$OTHER_SELECTION" ]]; then
+    path="$("$MENU_INPUT" 'Directory')" || return $?
+  else
+    path="$(printf '%s' "$selection" | cut -f2)"
+  fi
+
+  if ! resolve_input "$path"; then
+    echo "oc-project: not a directory: $path" >&2
+    notify_error "Not a directory: $path"
+    return 1
+  fi
+}
+
 # ----------------------------------------------------------------- main
 
 main() {
-  local cmd="${1:-list}"
+  local cmd="${1:-pick}"
   case "$cmd" in
+    pick) cmd_pick ;;
     list) cmd_list ;;
     *)
       echo "oc-project: unknown command: $cmd" >&2

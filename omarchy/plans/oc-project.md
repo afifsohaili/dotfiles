@@ -1,6 +1,6 @@
 # oc-project: opencode directory picker
 
-Status: **in progress** (Phase 1 done)
+Status: **in progress** (Phases 1-2 done)
 
 ## Goal
 
@@ -86,10 +86,12 @@ injectable seams via environment variables:
 - Landed: `omarchy/bin/oc-project`, `omarchy/tests/{run.sh,lib.sh,oc_project_list_test.sh}`.
   Run with `omarchy/tests/run.sh`; 1 file / 21 assertions, all passing.
 
-### Phase 2 — picker orchestration
+### Phase 2 — picker orchestration (DONE)
 - `oc-project pick` / default flow: menu-select rows + Other → menu-input.
 - Unit tests with fake menu commands: preset pick, Other-then-input pick,
   cancel at select, cancel at input, empty input, `~` expansion, relative path.
+- Landed: `omarchy/bin/oc-project` (`pick` + default), `omarchy/tests/oc_project_pick_test.sh`.
+  Run with `omarchy/tests/run.sh`; 2 files / 47 assertions, all passing.
 
 ### Phase 3 — same-dir detection + focus
 - `oc-project focus <dir>`: walk proc tree, match `--dir`, focus via hyprctl.
@@ -117,3 +119,16 @@ injectable seams via environment variables:
   a subset of test files; not in the original plan.
 - Unknown subcommands exit non-zero with a message on stderr; the plan did not
   specify this.
+
+### Phase 2
+- The `Other…` sentinel row is `\tOther…\t` (empty glyph, empty subtext). The
+  real shell (Menu.qml:526-528,726) drops the glyph column and collapses an
+  empty subtext, so the sentinel returns as the bare label `Other…`. The code
+  matches the bare label; a directory literally named `Other…` returns as
+  `Other…\t<path>` and is therefore distinguishable. The plan said the `Other…`
+  row "returned"; it did not spell out the empty-subtext collapse.
+- Invalid paths exit `1` with `oc-project: not a directory: <path>` on stderr,
+  plus a best-effort `omarchy-notification-send` when present; notification
+  failures are swallowed. The plan did not fix the exact code/message.
+- Cancel at either menu propagates the menu's own exit status (the plan only
+  required "non-zero, quietly").
