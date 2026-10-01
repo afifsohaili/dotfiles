@@ -1,6 +1,6 @@
 # oc-project: opencode directory picker
 
-Status: **in progress** (Phases 1-2 done)
+Status: **in progress** (Phases 1-3 done)
 
 ## Goal
 
@@ -93,10 +93,14 @@ injectable seams via environment variables:
 - Landed: `omarchy/bin/oc-project` (`pick` + default), `omarchy/tests/oc_project_pick_test.sh`.
   Run with `omarchy/tests/run.sh`; 2 files / 47 assertions, all passing.
 
-### Phase 3 — same-dir detection + focus
+### Phase 3 — same-dir detection + focus (DONE)
 - `oc-project focus <dir>`: walk proc tree, match `--dir`, focus via hyprctl.
 - Unit tests with fixture `/proc` tree + fake hyprctl: match found, no match,
-  multiple windows, non-opencode window ignored, cmdline without `--dir`.
+  multiple windows, non-opencode window ignored, cmdline without `--dir`,
+  missing/unreadable proc entries, symlink/trailing-slash/`.` canonicalisation,
+  malformed JSON, empty client list, failing jq, fallback dispatch form.
+- Landed: `omarchy/bin/oc-project` (`focus`), `omarchy/tests/oc_project_focus_test.sh`.
+  Run with `omarchy/tests/run.sh`; 3 files / 80 assertions, all passing.
 
 ### Phase 4 — launch + binding
 - `oc-project open <dir>`: launch-tui with title + `oc <dir>`.
@@ -132,3 +136,23 @@ injectable seams via environment variables:
   failures are swallowed. The plan did not fix the exact code/message.
 - Cancel at either menu propagates the menu's own exit status (the plan only
   required "non-zero, quietly").
+
+### Phase 3
+- No-match status is `3`, held in the named constant `EXIT_NOT_FOUND`; the plan
+  only fixed the value, not a constant name.
+- The `--dir` path is read by splitting the NUL-separated cmdline and scanning
+  for the literal `--dir` token. The plan described flattening argv with
+  `tr '\0' ' '` then matching `--dir <path>`; token scanning is equivalent here
+  and avoids any whitespace assumption. It does not support a path with spaces,
+  which was already true of the plan's flattening approach.
+- A match requires the `--dir` argument to canonicalise and equal the
+  canonicalised target; the target itself is canonicalised before the walk, so
+  a trailing slash, `.` segment, or symlink all resolve.
+- Focus runs `hyprctl dispatch 'hl.dsp.focus({ window = "address:<addr>" })'`
+  first; only if that returns non-zero does it fall back to
+  `hyprctl dispatch focuswindow "address:<addr>"`. A failure of the fallback is
+  swallowed: the address is still printed and the command still exits 0.
+- `focus` with no directory argument prints a usage error to stderr and exits
+  `1`; the plan did not specify this case.
+- The internal helper `window_address_for_dir` is defined and used by
+  `cmd_focus`; tests exercise it only through the public `focus` surface.

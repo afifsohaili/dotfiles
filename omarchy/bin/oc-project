@@ -28,15 +28,32 @@
 # path. The resolved canonical directory is printed, nothing else. Launching
 # opencode is a later phase.
 #
+# `oc-project focus <dir>` reports whether an opencode window is already open
+# on <dir>. It walks the Hyprland client list, keeps only
+# `org.omarchy.opencode` windows, follows each window's terminal pid to its
+# opencode child, and matches the child's `--dir` argument against <dir>
+# (both canonicalised). On a match it focuses the window and prints its
+# address; on no match it exits with the distinct status 3 and prints
+# nothing, so a caller can tell "already open" from "launch a new one".
+# It never launches anything. Missing jq, malformed JSON, and unreadable or
+# absent /proc entries are all tolerated as a no-match.
+#
+# Exit codes:
+#   0  match found, window focused, address on stdout
+#   1  usage error / failure to focus
+#   3  no matching window (launch a new one)
+#
 # Testability seams (see omarchy/plans/oc-project.md):
 #   OC_PROJECT_OPENCODE_DB   default $HOME/.local/share/opencode/opencode.db
 #   OC_PROJECT_PROJECTS_DIR  default $HOME/Projects
 #   OC_PROJECT_MENU_SELECT   default omarchy-menu-select
 #   OC_PROJECT_MENU_INPUT    default omarchy-menu-input
+#   OC_PROJECT_HYPRCTL       default hyprctl
+#   OC_PROJECT_PROC_ROOT     default /proc
 
 # omarchy:summary=Open the opencode picker, or list candidate directories
-# omarchy:args=[pick|list]
-# omarchy:examples=oc-project pick|oc-project list
+# omarchy:args=[pick|list|focus]
+# omarchy:examples=oc-project pick|oc-project list|oc-project focus <dir>
 
 set -euo pipefail
 
@@ -44,6 +61,14 @@ OPENCODE_DB="${OC_PROJECT_OPENCODE_DB:-$HOME/.local/share/opencode/opencode.db}"
 PROJECTS_DIR="${OC_PROJECT_PROJECTS_DIR:-$HOME/Projects}"
 MENU_SELECT="${OC_PROJECT_MENU_SELECT:-omarchy-menu-select}"
 MENU_INPUT="${OC_PROJECT_MENU_INPUT:-omarchy-menu-input}"
+HYPRCTL="${OC_PROJECT_HYPRCTL:-hyprctl}"
+PROC_ROOT="${OC_PROJECT_PROC_ROOT:-/proc}"
+
+# Window class set on `omarchy-launch-tui --app-id=org.omarchy.opencode`.
+WINDOW_CLASS='org.omarchy.opencode'
+
+# Distinct status for "no opencode window is open on that directory".
+EXIT_NOT_FOUND=3
 
 # Sentinel row, in the menu row format: empty glyph column, `Other…` label,
 # empty subtext (a directory row always carries a non-empty absolute path).
@@ -195,6 +220,83 @@ cmd_pick() {
   fi
 }
 
+# ----------------------------------------------------------------- focus
+
+# path_of_dir_arg <argv...> -> the argument immediately after a literal
+# `--dir` token, if any. The caller has already split the NUL-separated
+# cmdline into one argument per array slot. Prints the path, or nothing when
+# `--dir` is absent. A path containing spaces is not supported, which matches
+# this machine's opencode invocations.
+path_of_dir_arg() {
+  local arg want=0
+  for arg in "$@"; do
+    if (( want )); then
+      printf '%s\n' "$arg"
+      return 0
+    fi
+    [[ $arg == --dir ]] && want=1
+  done
+  return 0
+}
+
+# window_address_for_dir <dir> -> address of the first matching window on stdout.
+# Empty output when no window matches, jq is missing, the JSON is malformed,
+# or any /proc entry is unreadable. Never fails, never crashes.
+window_address_for_dir() {
+  local dir="$1" clients pid addr child argpath canon
+  local -a argv=()
+
+  command -v jq >/dev/null 2>&1 || return 0
+
+  clients="$("$HYPRCTL" clients -j 2>/dev/null)" || return 0
+  [[ -n $clients ]] || return 0
+
+  # Iterate over "pid<TAB>address" pairs for the opencode class only.
+  while IFS=$'\t' read -r pid addr; do
+    [[ -n $pid && -n $addr ]] || continue
+
+    while IFS= read -r child; do
+      [[ -n $child ]] || continue
+      [[ -r "$PROC_ROOT/$child/cmdline" ]] || continue
+
+      argv=()
+      while IFS= read -r -d '' arg; do
+        argv+=("$arg")
+      done <"$PROC_ROOT/$child/cmdline" 2>/dev/null || continue
+      (( ${#argv[@]} > 0 )) || continue
+
+      argpath="$(path_of_dir_arg "${argv[@]}")"
+      [[ -n $argpath ]] || continue
+
+      canon="$(readlink -f -- "$argpath" 2>/dev/null)" || continue
+      if [[ $canon == "$dir" ]]; then
+        printf '%s\n' "$addr"
+        return 0
+      fi
+    done <"$PROC_ROOT/$pid/task/$pid/children" 2>/dev/null
+  done < <(printf '%s' "$clients" | jq -r --arg class "$WINDOW_CLASS" \
+    '.[]? | select(.class == $class) | "\(.pid)\t\(.address)"' 2>/dev/null)
+  return 0
+}
+
+# cmd_focus <dir> -> focus a window already open on <dir>.
+# 0 with the address on stdout on a match; EXIT_NOT_FOUND, quiet, otherwise.
+cmd_focus() {
+  local dir="$1" canon addr
+  canon="$(readlink -f -- "$dir" 2>/dev/null)" || return "$EXIT_NOT_FOUND"
+
+  addr="$(window_address_for_dir "$canon")"
+  [[ -n $addr ]] || return "$EXIT_NOT_FOUND"
+
+  if ! "$HYPRCTL" dispatch 'hl.dsp.focus({ window = "address:'"$addr"'" })' \
+      >/dev/null 2>&1; then
+    "$HYPRCTL" dispatch focuswindow "address:$addr" >/dev/null 2>&1 || true
+  fi
+
+  printf '%s\n' "$addr"
+  return 0
+}
+
 # ----------------------------------------------------------------- main
 
 main() {
@@ -202,6 +304,14 @@ main() {
   case "$cmd" in
     pick) cmd_pick ;;
     list) cmd_list ;;
+    focus)
+      local dir="${2:-}"
+      if [[ -z $dir ]]; then
+        echo "oc-project: focus needs a directory" >&2
+        exit 1
+      fi
+      cmd_focus "$dir"
+      ;;
     *)
       echo "oc-project: unknown command: $cmd" >&2
       exit 1
