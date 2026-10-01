@@ -1,0 +1,131 @@
+#!/bin/bash
+
+# oc-project: choose a directory and open the shared opencode TUI on it.
+#
+# Phase 1 implements only `oc-project list`, the row builder. It emits one
+# menu row per directory, in the exact format `omarchy-menu-select` expects:
+#
+#     <TAB><basename><TAB><abs path>
+#
+# The leading icon column is empty and the absolute path is the stable key.
+# Rows come from two sources, deduped by canonical path, source 1 first:
+#
+#   1. opencode's sqlite DB `project_directory` joined to `project` and
+#      ordered by `project.time_updated` descending (most recent first).
+#   2. directories one level deep under the projects root, sorted.
+#
+# Nonexistent paths and hidden dirs are dropped. Every optional input is
+# tolerated: a missing sqlite3, DB, table, or projects dir yields whatever
+# rows remain, never an error.
+#
+# Testability seams (see omarchy/plans/oc-project.md):
+#   OC_PROJECT_OPENCODE_DB   default $HOME/.local/share/opencode/opencode.db
+#   OC_PROJECT_PROJECTS_DIR  default $HOME/Projects
+
+# omarchy:summary=Open the opencode picker, or list candidate directories
+# omarchy:args=[list]
+# omarchy:examples=oc-project list
+
+set -euo pipefail
+
+OPENCODE_DB="${OC_PROJECT_OPENCODE_DB:-$HOME/.local/share/opencode/opencode.db}"
+PROJECTS_DIR="${OC_PROJECT_PROJECTS_DIR:-$HOME/Projects}"
+
+# ---------------------------------------------------------------- helpers
+
+# canonical <path> -> absolute, symlink-resolved path on stdout.
+# Missing paths resolve to the absolute path, which is enough for dedupe.
+canonical() {
+  local path="$1"
+  if [[ $path == /* ]]; then
+    readlink -f -- "$path" 2>/dev/null || printf '%s\n' "$path"
+  else
+    return 1
+  fi
+}
+
+# emit_row <path> -> one menu row, exactly `<TAB><basename><TAB><path>`.
+emit_row() {
+  local path="$1" base
+  base="$(basename -- "$path")"
+  printf '\t%s\t%s\n' "$base" "$path"
+}
+
+# ------------------------------------------------------------ db source
+
+# Print canonical DB directory paths, most-recently-updated first.
+db_paths() {
+  [[ -f $OPENCODE_DB ]] || return 0
+  command -v sqlite3 >/dev/null 2>&1 || return 0
+
+  local rows
+  rows="$(sqlite3 -readonly -noheader -separator '|' "$OPENCODE_DB" \
+    "SELECT d.directory
+       FROM project_directory AS d
+       JOIN project AS p ON p.id = d.project_id
+      ORDER BY p.time_updated DESC;" 2>/dev/null)" || return 0
+
+  local dir
+  while IFS= read -r dir; do
+    [[ -n $dir ]] && printf '%s\n' "$dir"
+  done <<<"$rows"
+  return 0
+}
+
+# ------------------------------------------------------- projects source
+
+# Print directories one level deep under PROJECTS_DIR, sorted, no hidden.
+projects_paths() {
+  [[ -d $PROJECTS_DIR ]] || return 0
+
+  local entry
+  for entry in "$PROJECTS_DIR"/*; do
+    [[ -d $entry ]] || continue
+    printf '%s\n' "$entry"
+  done | LC_ALL=C sort
+}
+
+# ----------------------------------------------------------------- list
+
+# Print the deduped menu rows. Source 1 (DB) wins a path's position; source
+# 2 appends anything not already seen. Paths that do not exist are dropped.
+cmd_list() {
+  local seen=$'\n' path canon
+  local -a ordered=()
+
+  while IFS= read -r path; do
+    [[ -n $path ]] || continue
+    canon="$(canonical "$path")" || continue
+    [[ -d $canon ]] || continue
+    [[ $(basename -- "$canon") != .* ]] || continue
+    [[ $canon == *$'\n'* ]] && continue
+    if [[ $seen == *$'\n'"$canon"$'\n'* ]]; then
+      continue
+    fi
+    seen+="$canon"$'\n'
+    ordered+=("$canon")
+  done < <(db_paths; projects_paths)
+
+  local p
+  if (( ${#ordered[@]} > 0 )); then
+    for p in "${ordered[@]}"; do
+      emit_row "$p"
+    done
+  fi
+  return 0
+}
+
+# ----------------------------------------------------------------- main
+
+main() {
+  local cmd="${1:-list}"
+  case "$cmd" in
+    list) cmd_list ;;
+    *)
+      echo "oc-project: unknown command: $cmd" >&2
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"
