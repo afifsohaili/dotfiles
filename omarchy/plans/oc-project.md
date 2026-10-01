@@ -1,6 +1,6 @@
 # oc-project: opencode directory picker
 
-Status: **in progress** (Phases 1-3 done)
+Status: **in progress** (Phases 1-4 done; Phase 5 review pending)
 
 ## Goal
 
@@ -35,8 +35,8 @@ o.bind("SUPER + SHIFT + O", "Opencode", "omarchy-launch-tui --app-id=org.omarchy
 5. Resolve picked path → directory, canonical.
 6. If an `org.omarchy.opencode` window's opencode child has `--dir <that path>`,
    focus it and exit.
-7. Else launch: `omarchy-launch-tui --app-id=org.omarchy.opencode oc "<path>"`
-   with the terminal titled `oc: <path>`.
+7. Else launch: `xdg-terminal-exec --app-id=org.omarchy.opencode
+   --title=oc: <path> oc "<path>"` (see Phase 4 divergence on the launcher).
 
 ## Same-dir detection
 
@@ -71,7 +71,9 @@ injectable seams via environment variables:
 - `OC_PROJECT_HYPRCTL` — command used instead of `hyprctl` (fixture: outputs JSON)
 - `OC_PROJECT_MENU_SELECT` — command used instead of `omarchy-menu-select`
 - `OC_PROJECT_MENU_INPUT` — command used instead of `omarchy-menu-input`
-- `OC_PROJECT_LAUNCH` — command used instead of `omarchy-launch-tui`
+- `OC_PROJECT_LAUNCH` — command used instead of `xdg-terminal-exec`
+- `OC_PROJECT_FOCUS` — command run in place of the internal focus in the
+  default flow only (test seam)
 - `OC_PROJECT_PROJECTS_DIR` — instead of `$HOME/Projects`
 - `OC_PROJECT_OPENCODE_DB` — instead of the opencode sqlite path
 - `OC_PROJECT_PROC_ROOT` — instead of `/proc` (fixture tree)
@@ -102,14 +104,24 @@ injectable seams via environment variables:
 - Landed: `omarchy/bin/oc-project` (`focus`), `omarchy/tests/oc_project_focus_test.sh`.
   Run with `omarchy/tests/run.sh`; 3 files / 80 assertions, all passing.
 
-### Phase 4 — launch + binding
-- `oc-project open <dir>`: launch-tui with title + `oc <dir>`.
-- Unit test with fake launch command: correct argv.
-- Repoint `SUPER+SHIFT+O` in `bindings.lua`.
-- Feature test: end-to-end with all fakes — pick existing open dir focuses;
-  pick unopened dir launches with expected argv.
+### Phase 4 — launch + binding (DONE)
+- `oc-project open <dir>`: launches with the exact argv
+  `--app-id=org.omarchy.opencode --title=oc: <abs> oc <abs>`.
+- Default flow (no subcommand) wired: `pick` → `focus`; focus `0` = focused,
+  no launch; focus `3` (`EXIT_NOT_FOUND`) = `open`; any other focus status
+  propagates. Cancel at pick exits non-zero quietly.
+- Repointed `SUPER+SHIFT+O` in `bindings.lua` at `oc-project`; `hl.unbind`
+  kept.
+- Landed: `omarchy/bin/oc-project` (`open` + default flow, `OC_PROJECT_LAUNCH`
+  and `OC_PROJECT_FOCUS` seams), `omarchy/hypr/bindings.lua`,
+  `omarchy/tests/oc_project_open_test.sh`, `omarchy/tests/oc_project_feature_test.sh`.
+  Run with `omarchy/tests/run.sh`; 5 files / 126 assertions, all passing.
+- Hyprland validated: `hyprctl reload` → `ok`; `hyprctl configerrors` empty;
+  `omarchy menu keybindings --print` shows `SUPER SHIFT + O → Opencode`.
+- Live check: launching through `xdg-terminal-exec` produced a window with
+  class `org.omarchy.opencode` and title `oc: /tmp/test`.
 
-### Phase 5 — review pass
+### Phase 5 — review pass (PENDING)
 - Full-suite run, coverage check, update this doc's divergence log.
 
 ## Divergence log
@@ -156,3 +168,30 @@ injectable seams via environment variables:
   `1`; the plan did not specify this case.
 - The internal helper `window_address_for_dir` is defined and used by
   `cmd_focus`; tests exercise it only through the public `focus` surface.
+
+### Phase 4
+- **Launcher seam default is `xdg-terminal-exec`, not `omarchy-launch-tui`.**
+  `omarchy-launch-tui` only parses `--app-id=` and hardcodes
+  `xdg-terminal-exec --app-id=$APP_ID -e "$1" "${@:2}"`; it has no way to
+  forward `--title`. Calling `xdg-terminal-exec` directly (which supports
+  `--app-id=` and `--title=`) is the only option that sets both the class
+  and the title. The script therefore builds the full argv itself and runs it
+  through `OC_PROJECT_LAUNCH`, default `xdg-terminal-exec`.
+- The launched argv is exactly four elements after the launcher:
+  `--app-id=org.omarchy.opencode`, `--title=oc: <abs>`, `oc`, `<abs>`. The
+  plan wrote the launcher as `omarchy-launch-tui --app-id=... oc "<path>"`,
+  i.e. it assumed title support that `omarchy-launch-tui` does not have.
+- `oc-project open <dir>` validates/canonicalises explicitly and exits `1`
+  with `oc-project: not a directory: <path>` on stderr plus a best-effort
+  notification; `open` with no argument is the same error. The plan did not
+  fix the exact status/message.
+- True no-subcommand (`$# == 0`) is the new wired default flow. An explicit
+  empty argument (`oc-project ""`) still runs `pick`, preserving the Phase 2
+  test that calls the old default with an empty string.
+- The default flow's focus step is injectable via `OC_PROJECT_FOCUS` (a
+  command run in place of the internal `cmd_focus`), in addition to the
+  existing seams. This keeps the flow unit-testable without a fixture `/proc`
+  tree. It is used only by the default flow; the public `focus` subcommand is
+  unchanged.
+- `oc_project_open_test.sh` and `oc_project_feature_test.sh` add 46
+  assertions; the suite is now 5 files / 126 assertions.

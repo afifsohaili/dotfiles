@@ -16,11 +16,12 @@
 hl.unbind("SUPER + SHIFT + A")
 o.bind("SUPER + SHIFT + A", "Herdr", "omarchy-launch-terminal herdr")
 
--- Rebind SUPER+SHIFT+O (Omarchy default: Obsidian) to a shared opencode client.
--- Launches have no project cwd, so pin the projects root; a bare `oc` run from
--- inside a project targets that project instead.
+-- Rebind SUPER+SHIFT+O (Omarchy default: Obsidian) to the opencode picker.
+-- `oc-project` builds the directory list, focuses an already-open directory,
+-- or launches a new `oc` window. It resolves everything itself and does not
+-- depend on the launch cwd.
 hl.unbind("SUPER + SHIFT + O")
-o.bind("SUPER + SHIFT + O", "Opencode", "omarchy-launch-tui --app-id=org.omarchy.opencode oc \"$HOME/Projects\"")
+o.bind("SUPER + SHIFT + O", "Opencode", "oc-project")
 
 -- Screenshot on ALT+SHIFT+4 (same smart flow as PRINT).
 o.bind("ALT + SHIFT + 4", "Screenshot", "omarchy-capture-screenshot")

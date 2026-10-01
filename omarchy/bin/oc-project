@@ -38,10 +38,27 @@
 # It never launches anything. Missing jq, malformed JSON, and unreadable or
 # absent /proc entries are all tolerated as a no-match.
 #
+# `oc-project open <dir>` launches opencode on the canonical <dir>. The window
+# gets class `org.omarchy.opencode` and title `oc: <dir>`. The launcher is the
+# full argv built here and run through the OC_PROJECT_LAUNCH seam:
+#
+#     <launcher> --app-id=org.omarchy.opencode --title=oc: <dir> oc <dir>
+#
+# The default launcher is `xdg-terminal-exec`, not `omarchy-launch-tui`:
+# omarchy-launch-tui only parses `--app-id=` and hardcodes
+# `xdg-terminal-exec --app-id=$APP_ID -e "$1" "${@:2}"`, so it cannot forward
+# a `--title`. Calling xdg-terminal-exec directly is the only way to satisfy
+# both the class and the title. It supports `--app-id=` and `--title=`.
+#
+# `oc-project` with no subcommand is the wired default flow:
+#   pick -> focus <dir>; if focus reports EXIT_NOT_FOUND (3), open <dir>;
+#   any other non-zero from focus is propagated. Cancel at pick exits non-zero
+#   quietly. A focus success means "focused"; nothing is launched.
+#
 # Exit codes:
-#   0  match found, window focused, address on stdout
-#   1  usage error / failure to focus
-#   3  no matching window (launch a new one)
+#   0  focus found + focused, or open launched, or a successful pick/list
+#   1  usage error / failure to focus / invalid directory
+#   3  no matching window (open a new one) in `focus`
 #
 # Testability seams (see omarchy/plans/oc-project.md):
 #   OC_PROJECT_OPENCODE_DB   default $HOME/.local/share/opencode/opencode.db
@@ -50,10 +67,13 @@
 #   OC_PROJECT_MENU_INPUT    default omarchy-menu-input
 #   OC_PROJECT_HYPRCTL       default hyprctl
 #   OC_PROJECT_PROC_ROOT     default /proc
+#   OC_PROJECT_LAUNCH        default xdg-terminal-exec
+#   OC_PROJECT_FOCUS         default (internal focus); overrides focus in the
+#                            default flow only, for tests
 
-# omarchy:summary=Open the opencode picker, or list candidate directories
-# omarchy:args=[pick|list|focus]
-# omarchy:examples=oc-project pick|oc-project list|oc-project focus <dir>
+# omarchy:summary=Pick a directory and open the shared opencode TUI on it
+# omarchy:args=[open|pick|list|focus] [dir]
+# omarchy:examples=oc-project|oc-project open <dir>|oc-project list|oc-project focus <dir>
 
 set -euo pipefail
 
@@ -63,8 +83,10 @@ MENU_SELECT="${OC_PROJECT_MENU_SELECT:-omarchy-menu-select}"
 MENU_INPUT="${OC_PROJECT_MENU_INPUT:-omarchy-menu-input}"
 HYPRCTL="${OC_PROJECT_HYPRCTL:-hyprctl}"
 PROC_ROOT="${OC_PROJECT_PROC_ROOT:-/proc}"
+LAUNCH="${OC_PROJECT_LAUNCH:-xdg-terminal-exec}"
+FOCUS_CMD="${OC_PROJECT_FOCUS:-}"
 
-# Window class set on `omarchy-launch-tui --app-id=org.omarchy.opencode`.
+# Window class set on the launched terminal.
 WINDOW_CLASS='org.omarchy.opencode'
 
 # Distinct status for "no opencode window is open on that directory".
@@ -297,11 +319,68 @@ cmd_focus() {
   return 0
 }
 
+# ------------------------------------------------------------------ open
+
+# cmd_open <dir> -> launch opencode on the canonical <dir>.
+# Exits 1 with a message on stderr (and a best-effort notification) when
+# <dir> is not a directory; otherwise builds and runs the launcher argv and
+# returns its status.
+cmd_open() {
+  local dir="$1" canon
+  if [[ -n $dir ]]; then
+    canon="$(readlink -f -- "$dir" 2>/dev/null)" || canon=""
+  fi
+  if [[ -z ${canon:-} || ! -d $canon ]]; then
+    echo "oc-project: not a directory: $dir" >&2
+    notify_error "Not a directory: $dir"
+    return 1
+  fi
+
+  "$LAUNCH" "--app-id=$WINDOW_CLASS" "--title=oc: $canon" oc "$canon"
+}
+
+# cmd_focus_seam <dir> -> run the focus step of the default flow.
+# Uses OC_PROJECT_FOCUS as a seam when set (tests), otherwise the internal
+# cmd_focus. stdout/stderr and the exit status are passed through unchanged.
+cmd_focus_seam() {
+  if [[ -n $FOCUS_CMD ]]; then
+    "$FOCUS_CMD" "$@"
+  else
+    cmd_focus "$@"
+  fi
+}
+
+# cmd_default -> the wired no-subcommand flow: pick -> focus -> open.
+# focus 0 means "focused": nothing is launched. focus EXIT_NOT_FOUND (3)
+# means "not open": launch. Any other non-zero from focus propagates. A
+# cancel or invalid pick exits non-zero quietly with no launch.
+cmd_default() {
+  local dir status
+  dir="$(cmd_pick)" || return $?
+  if cmd_focus_seam "$dir" >/dev/null 2>&1; then
+    return 0
+  else
+    status=$?
+  fi
+  (( status == EXIT_NOT_FOUND )) || return "$status"
+  cmd_open "$dir"
+}
+
 # ----------------------------------------------------------------- main
 
 main() {
-  local cmd="${1:-pick}"
+  # True "no subcommand" (zero arguments) is the wired default flow. An
+  # explicit empty argument (`oc-project ""`) is treated as `pick`, which is
+  # how the Phase 2 tests exercise the old default.
+  if (( $# == 0 )); then
+    cmd_default
+    return
+  fi
+
+  local cmd="$1"
   case "$cmd" in
+    "")
+      cmd_pick ;;
     pick) cmd_pick ;;
     list) cmd_list ;;
     focus)
@@ -311,6 +390,9 @@ main() {
         exit 1
       fi
       cmd_focus "$dir"
+      ;;
+    open)
+      cmd_open "${2:-}"
       ;;
     *)
       echo "oc-project: unknown command: $cmd" >&2
