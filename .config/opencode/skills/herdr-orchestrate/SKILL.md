@@ -49,8 +49,8 @@ herdr agent start <name> --kind opencode --pane "$worker_pane" -- --agent <AGENT
 ```
 
 - `<name>`: unique, matches `[a-z][a-z0-9_-]{0,31}`.
-- `<AGENT>`: an agent defined in `~/.config/opencode/agent/*.md` (e.g. `ollama-k3`, `ollama-dsv4f`).
-- `<MODEL>`: `provider/model` (e.g. `ollama-cloud/kimi-k3`). Read it from the agent file's `model:` frontmatter if not given explicitly.
+- `<AGENT>`: an agent defined in `~/.config/opencode/agent/*.md` (e.g. `ollama-glm53`, `ollama-dsv4f`).
+- `<MODEL>`: `provider/model` (e.g. `ollama-cloud/deepseek-v4.1-flash`). Read it from the agent file's `model:` frontmatter if not given explicitly.
 
 `agent start` returns only after herdr detects opencode and marks it ready. If it returns `agent_not_ready`, wait until the agent is idle before prompting.
 
@@ -62,7 +62,17 @@ herdr agent prompt <name> "<task> ... End your final message with a line exactly
 
 `--wait` returns on the first settled `idle`, `done`, or `blocked` state. **This is not proof of completion** — herdr can report `idle`/`done` while B is still working (known bug herdr#3530). Always verify with a read.
 
-If the prompt returns `agent_blocked`, B is at a question/permission dialog. Inspect it, ask the user before answering, then use `agent send-keys` to respond.
+If the prompt returns `agent_blocked`, B is at a question or a permission dialog. **Inspect it first** — the two need different handling:
+
+- **Permission dialog** (opencode shell/file approval, shown as `△ Permission required` with `Allow once` / `Allow always` / `Reject`). If the user has pre-authorized a policy, answer it:
+  - Approve with `Allow always` when the command is non-destructive, so the rest of B's turn runs unprompted.
+  - **Never approve destructive commands.** Treat `rm`, `rmdir`, `git push`, `git reset --hard`, `git clean`, force-push, package publish, credential/token writes, and anything touching a path outside the repo or a tmp scratch dir as destructive. Approve `Allow once` for a destructive command only if the user explicitly authorized that exact command; otherwise stop and ask the user.
+  - To approve: `herdr agent send-keys <name> enter` (the dialog's current selection is `Allow once` by default). To pick `Allow always`, first move the selection with `herdr agent send-keys <name> right` then `enter`; pick `Reject` with `right right enter`.
+  - `agent_blocked` from a permission dialog is otherwise a normal part of a long turn — do not treat it as the worker's final answer.
+
+- **Question dialog** (B asking the user a design/scope question). Do not answer on B's behalf. Record the question, stop, and surface it to the user.
+
+Note: herdr can also report `blocked` for transient UI overlays (e.g. opencode's "Message Actions" popup) that are not real dialogs. Re-check state after a short wait before treating a `blocked` as a decision point.
 
 ### 4. Read B's output
 

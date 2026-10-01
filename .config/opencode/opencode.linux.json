@@ -2,21 +2,9 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "external_directory": {
-      "/usr/share/omarchy": "allow",
       "/usr/share/omarchy/*": "allow",
-      "/etc/omarchy.conf": "allow",
-      "/etc/omarchy-release": "allow",
-      "/etc/profile.d/omarchy.sh": "allow",
-      "~/.local/share/omarchy": "allow",
       "~/.local/share/omarchy/*": "allow",
-      "~/.config/systemd/user": "allow",
       "~/.config/systemd/user/*": "allow"
-    },
-    "edit": {
-      "/usr/share/omarchy/*": "deny",
-      "/etc/omarchy.conf": "deny",
-      "/etc/omarchy-release": "deny",
-      "/etc/profile.d/omarchy.sh": "deny"
     },
     "bash": {
       "omarchy": "allow",

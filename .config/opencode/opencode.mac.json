@@ -6,7 +6,7 @@
       "rm /Users/afifsohaili/Projects/*": "allow"
     },
     "external_directory": {
-      "~/Desktop/CleanShot *": "allow"
+      "~/Desktop/*": "allow"
     }
   },
   "mcp": {

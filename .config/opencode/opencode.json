@@ -8,34 +8,20 @@
     "websearch": "allow",
     "webfetch": "allow",
     "external_directory": {
-      "*": "ask",
       "/tmp/*": "allow",
-      "~/.config/opencode": "allow",
       "~/.config/opencode/*": "allow",
-      "~/.config/mise": "allow",
-      "~/.config/mise/*": "allow",
-      "~/.config/herdr": "allow",
       "~/.config/herdr/*": "allow",
-      "~/.config/omarchy": "allow",
       "~/.config/omarchy/*": "allow",
-      "~/.config/hypr": "allow",
       "~/.config/hypr/*": "allow",
-      "~/.config/alacritty": "allow",
       "~/.config/alacritty/*": "allow",
-      "~/.config/foot": "allow",
       "~/.config/foot/*": "allow",
-      "~/.config/kitty": "allow",
       "~/.config/kitty/*": "allow",
-      "~/.config/ghostty": "allow",
       "~/.config/ghostty/*": "allow",
       "~/.opencode/*": "allow",
       "~/.agents": "allow",
       "~/.agents/*": "allow",
       "~/Tiga/*": "allow",
-      "~/Projects": "allow",
-      "~/Projects/*": "allow",
-      "~/Work": "allow",
-      "~/Work/*": "allow"
+      "~/Work/*": "allow",
     },
     "read": {
       "*": "allow",
@@ -52,7 +38,6 @@
     "./plugin/rm-guard.ts",
     "opencode-history-search",
     "@franlol/opencode-md-table-formatter@latest",
-    "opencode-tasks"
   ],
   "references": {
     "projects": {
