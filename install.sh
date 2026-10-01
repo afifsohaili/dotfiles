@@ -129,6 +129,14 @@ if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
   run systemctl --user daemon-reload
 
+  # Timers shipped with the repo are opt-in units, not services: enable the
+  # ones we know about so the data they refresh stays current on a fresh box.
+  for timer in omarchy-agent-usage-ollama.timer; do
+    unit="$HOME/.config/systemd/user/$timer"
+    [ -e "$unit" ] || continue
+    run systemctl --user enable "$timer" 2>/dev/null || true
+  done
+
   # Shell plugins (e.g. local.caffeinate) are directories, not single files.
   # Symlink each plugin dir into the Omarchy plugin path, then rescan so the
   # shell picks them up without a restart. The shell watches plugin code for

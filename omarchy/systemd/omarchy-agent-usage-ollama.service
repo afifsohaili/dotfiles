@@ -1,0 +1,11 @@
+[Unit]
+Description=Refresh the Ollama Cloud usage record for the omarchy.agents panel
+Documentation=man:omarchy-agent-usage-ollama(1)
+After=network-online.target
+
+[Service]
+Type=oneshot
+# The collector prints one display-ready record. The panel watches
+# ~/.local/state/omarchy/agents/usage/, so write it atomically there. A
+# failure leaves the previous record in place rather than blanking the tab.
+ExecStart=/usr/bin/bash -c 'dir=%h/.local/state/omarchy/agents/usage; mkdir -p "$dir" && tmp="$dir/.ollama.$$" && %h/.local/bin/omarchy-agent-usage-ollama > "$tmp" && mv -f "$tmp" "$dir/ollama.json"'
