@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "id": "local.caffeinate",
+  "name": "Caffeinate",
+  "version": "1.0.0",
+  "author": "afifsohaili",
+  "description": "Coffee cup in the bar with hours left. Click to start a stay-awake run: presets, a typed duration, extend, or stop. Optional 10% display dim.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Caffeinate.qml"
+  },
+  "barWidget": {
+    "displayName": "Caffeinate",
+    "description": "Coffee cup with hours left; click to set how long the machine should stay awake.",
+    "category": "System",
+    "defaultSection": "center",
+    "allowMultiple": false,
+    "defaults": {
+      "presets": "30m,1h,2h,4h,8h,12h,24h"
+    },
+    "schema": [
+      {
+        "key": "presets",
+        "type": "string",
+        "label": "Presets",
+        "description": "Comma-separated durations for the one-click pills (e.g. 30m,1h,2h). Bare numbers are hours.",
+        "defaultValue": "30m,1h,2h,4h,8h,12h,24h"
+      }
+    ]
+  }
+}

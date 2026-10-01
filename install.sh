@@ -128,6 +128,44 @@ if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/bin" "$HOME/.local/bin"
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
   run systemctl --user daemon-reload
+
+  # Shell plugins (e.g. local.caffeinate) are directories, not single files.
+  # Symlink each plugin dir into the Omarchy plugin path, then rescan so the
+  # shell picks them up without a restart. The shell watches plugin code for
+  # changes, so a rescan is enough.
+  if [ -d "$DOTFILES/omarchy/plugins" ]; then
+    plugins_dest="$HOME/.config/omarchy/plugins"
+    plugins_linked=0
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] mkdir -p %q\n' "$plugins_dest"
+    else
+      mkdir -p "$plugins_dest"
+    fi
+    for src in "$DOTFILES/omarchy/plugins"/*/; do
+      [ -d "$src" ] || continue
+      src="${src%/}"
+      name="$(basename "$src")"
+      dest="$plugins_dest/$name"
+
+      if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
+        say "already linked: $dest -> $src"
+        continue
+      fi
+
+      if [ -e "$dest" ] || [ -L "$dest" ]; then
+        backup="$dest.pre-dotfiles-$(date +%Y%m%d-%H%M%S)"
+        run mv "$dest" "$backup"
+      fi
+
+      run ln -s "$src" "$dest"
+      plugins_linked=1
+    done
+    if [ "$plugins_linked" -eq 1 ] && [ "$DRY_RUN" -ne 1 ]; then
+      # A new/changed plugin dir is picked up without a restart; enable it on
+      # first install so the widget lands in the bar.
+      run omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+    fi
+  fi
 else
   say "machine glue: skipped (not Linux)"
 fi

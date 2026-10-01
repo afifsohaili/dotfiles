@@ -1,0 +1,612 @@
+#!/bin/bash
+
+# Omarchy caffeinate: keep the shell session "awake" for a set number of
+# hours. Sleep and idle are blocked for the whole run, so closing the lid
+# or hitting `systemctl suspend` will not put this machine to sleep.
+# Optionally dims the focused display to 10% while it runs and restores the
+# previous brightness on stop/expiry.
+#
+# State:  ${XDG_STATE_HOME:-~/.local/state}/omarchy/caffeinate/state.json
+# Inhibit unit: omarchy-caffeinate.service (systemd --user, transient)
+#
+# The unit carries:
+#   - RuntimeMaxSec  : kills the inhibitor exactly when the timer expires
+#   - ExecStopPost   : `omarchy-caffeinate cleanup --token <token>` which
+#                      releases the shell idle override, restores display
+#                      brightness, and flips the state file to inactive.
+# The token ties a cleanup to the run it belongs to, so a stale ExecStopPost
+# can never clobber a newer session.
+
+# omarchy:summary=Keep the machine awake for a set duration
+# omarchy:args=[start [duration] [--dim]|extend <duration> [--dim]|stop|status [--json]|active|prompt [--dim]|cleanup --token <token>]
+# omarchy:examples=omarchy-caffeinate start 2 | omarchy-caffeinate start 3d | omarchy-caffeinate extend 1 | omarchy-caffeinate stop | omarchy-caffeinate status | omarchy-caffeinate active
+
+set -euo pipefail
+
+UNIT="omarchy-caffeinate"
+
+STATE_DIR="${CAFFEINATE_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/caffeinate}"
+STATE_FILE="$STATE_DIR/state.json"
+STAY_AWAKE_FILE="${CAFFEINATE_STAY_AWAKE_FILE:-$HOME/.local/state/omarchy/indicators/stay-awake}"
+
+DIM_PERCENT=10
+MIN_SECONDS=60
+MAX_SECONDS=$(( 7 * 24 * 3600 ))
+
+fail() {
+  echo "omarchy-caffeinate: $*" >&2
+  exit 1
+}
+
+# ---------------------------------------------------------------- helpers
+
+boot_id() {
+  cat /proc/sys/kernel/random/boot_id
+}
+
+self_path() {
+  local path="${BASH_SOURCE[0]}"
+  if [[ $path != */* ]]; then
+    path="$(command -v -- "$path" || true)"
+  fi
+  [[ -n $path ]] || fail "could not resolve the omarchy-caffeinate path"
+  readlink -f -- "$path"
+}
+
+# `<spec>` -> seconds on stdout. `2`, `1.5`, `2h`, `90m`, `1h30m`.
+duration_seconds() {
+  local spec="${1:-}" seconds
+  spec="${spec,,}"
+  spec="${spec// /}"
+  [[ -n $spec ]] || return 1
+
+  if [[ $spec =~ ^([0-9]+)([.]([0-9]+))?h?$ ]]; then
+    # Bare number is hours: 2, 1.5, 36, 2h.
+    seconds=$(awk -v h="${BASH_REMATCH[1]}.${BASH_REMATCH[3]:-0}" 'BEGIN { printf "%.0f", h * 3600 }')
+  elif [[ $spec =~ ^([0-9]+)([.]([0-9]+))?d$ ]]; then
+    # Days are allowed on input but never shown on the label: 3d is 72h.
+    seconds=$(awk -v d="${BASH_REMATCH[1]}.${BASH_REMATCH[3]:-0}" 'BEGIN { printf "%.0f", d * 86400 }')
+  elif [[ $spec =~ ^([0-9]+)m$ ]]; then
+    seconds=$(( BASH_REMATCH[1] * 60 ))
+  elif [[ $spec =~ ^([0-9]+)s$ ]]; then
+    # Seconds, used by the panel to re-apply a run with an exact remainder.
+    seconds=$(( BASH_REMATCH[1] ))
+  elif [[ $spec =~ ^([0-9]+)h([0-9]+)m$ ]]; then
+    seconds=$(( BASH_REMATCH[1] * 3600 + BASH_REMATCH[2] * 60 ))
+  else
+    return 1
+  fi
+
+  (( seconds >= MIN_SECONDS && seconds <= MAX_SECONDS )) || return 1
+  printf '%s\n' "$seconds"
+}
+
+# Countdown label the bar/panel show: 36h, 1h, 30m, 1m. Days are never used.
+format_seconds() {
+  local seconds="${1:-0}"
+  (( seconds > 0 )) || { echo "0m"; return; }
+  if (( seconds >= 3600 )); then
+    printf '%dh\n' $(( (seconds + 3599) / 3600 ))
+  else
+    printf '%dm\n' $(( (seconds + 59) / 60 ))
+  fi
+}
+
+# Longer human text for status lines: `1h 59m`, `30m`.
+format_seconds_long() {
+  local seconds="${1:-0}"
+  (( seconds > 0 )) || { echo "0m"; return; }
+  local hours=$(( seconds / 3600 ))
+  local minutes=$(( (seconds % 3600) / 60 ))
+  if (( hours > 0 )); then
+    if (( minutes > 0 )); then
+      printf '%dh %dm\n' "$hours" "$minutes"
+    else
+      printf '%dh\n' "$hours"
+    fi
+  else
+    printf '%dm\n' "$minutes"
+  fi
+}
+
+clock_time() {
+  date -d "@$1" '+%H:%M' 2>/dev/null || true
+}
+
+refresh_shell() {
+  omarchy-shell -q omarchy.indicators refresh >/dev/null 2>&1 || true
+  # The standalone local.caffeinate widget watches the state file, but an
+  # explicit nudge makes start/stop feel instant on the bar.
+  omarchy-shell -q local.caffeinate refresh >/dev/null 2>&1 || true
+}
+
+# ------------------------------------------------------------------ state
+
+state_field() { # <key> -> value ("" when missing)
+  jq -r --arg key "$1" '.[$key] // empty' "$STATE_FILE" 2>/dev/null || true
+}
+
+# True when a state file exists and its active flag is set. Guards against a
+# missing/empty file so every caller can treat "no run" as plain false.
+read_active() {
+  [[ -s $STATE_FILE ]] || return 1
+  [[ "$(jq -r '.active // false' "$STATE_FILE" 2>/dev/null)" == "true" ]]
+}
+
+is_true() {
+  [[ ${1:-} == "true" ]]
+}
+
+# mtime as epoch seconds; 0 when the file is missing.
+state_mtime() {
+  stat -c %Y "$STATE_FILE" 2>/dev/null || echo 0
+}
+
+write_state() {
+  mkdir -p "$STATE_DIR"
+  local tmp="$STATE_DIR/.state.$RANDOM"
+  cat >"$tmp" || exit 1
+  mv -f "$tmp" "$STATE_FILE"
+}
+
+# ---------------------------------------------------------------- systemd
+
+unit_is_active() {
+  systemctl --user is-active --quiet "$UNIT.service" >/dev/null 2>&1
+}
+
+stop_unit() {
+  systemctl --user stop "$UNIT.service" >/dev/null 2>&1 || true
+  systemctl --user reset-failed "$UNIT.service" >/dev/null 2>&1 || true
+}
+
+# ---------------------------------------------------------------- cleanup
+#
+# Mechanical stop of a caffeinate run: release the shell idle override (only
+# when this run took it over), restore display brightness (only when the
+# display is still on the same boot and was actually dimmed), and flip the
+# state file to inactive. Always exits 0, so ExecStopPost can never taint the
+# unit. A notification fires only for a natural expiry; a manual `stop`
+# arrives while time is still left and stays quiet.
+
+cleanup_run() {
+  local token="${1:-}"
+  [[ -s $STATE_FILE ]] || return 0
+
+  local state_token
+  state_token="$(jq -r '.token // empty' "$STATE_FILE" 2>/dev/null || true)"
+  [[ -n $state_token ]] || return 0
+  if [[ -n $token && $token != "$state_token" ]]; then
+    return 0
+  fi
+
+  local active
+  active="$(jq -r '.active // false' "$STATE_FILE" 2>/dev/null || echo false)"
+  [[ $active == "true" ]] || return 0
+
+  local now dim dim_monitor dim_saved idle_owned expires runtime_boot hours
+  now="$(date +%s)"
+  dim="$(jq -r '.dim // false' "$STATE_FILE" 2>/dev/null || echo false)"
+  dim_monitor="$(jq -r '.dimMonitor // empty' "$STATE_FILE" 2>/dev/null || true)"
+  dim_saved="$(jq -r '.dimSaved // empty' "$STATE_FILE" 2>/dev/null || true)"
+  idle_owned="$(jq -r '.idleOwned // false' "$STATE_FILE" 2>/dev/null || echo false)"
+  expires="$(jq -r '.expiresAt // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+  runtime_boot="$(jq -r '.bootId // empty' "$STATE_FILE" 2>/dev/null || true)"
+  hours="$(jq -r '.hours // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+
+  if [[ $dim == "true" && -n $dim_monitor && -n $dim_saved
+    && $runtime_boot == "$(boot_id)" ]]; then
+    omarchy-brightness-display --no-osd --monitor "$dim_monitor" "${dim_saved}%" >/dev/null 2>&1 || true
+  fi
+
+  if [[ $idle_owned == "true" ]]; then
+    omarchy-toggle-idle allow-idle >/dev/null 2>&1 || true
+  fi
+
+  jq -nc --arg boot "$(boot_id)" '{active:false,bootId:$boot}' >"$STATE_FILE"
+  refresh_shell
+
+    # Natural expiry when the deadline has actually passed. A manual `stop`
+    # arrives while time is still left and stays quiet.
+    if (( expires > 0 && now >= expires - 2 )); then
+      local duration
+      duration="$(jq -r '.endSeconds // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+      local ran_for=$(( now - expires + duration ))
+      omarchy-notification-send -g 󰅶 "Caffeinate ended" \
+        "Idle and sleep are allowed again ($(format_seconds_long "$ran_for") run)" \
+        >/dev/null 2>&1 || true
+    fi
+  }
+
+# ----------------------------------------------------------------- start
+
+# Menu-driven duration prompt. Cancel returns 1; an invalid answer sends a
+# notification and returns 1, so the caller exits without a confusing run.
+ask_hours() {
+  local answer
+  answer="$(omarchy-menu-input "Stay awake for how long?" --width 400)" || return 1
+  answer="${answer//[[:space:]]/}"
+  [[ -n $answer ]] || return 1
+  if ! duration_seconds "$answer" >/dev/null; then
+    omarchy-notification-send -g 󰅶 "Caffeinate" \
+      "Enter a duration like 3 (hours), 90m, 2h or 3d" >/dev/null 2>&1 || true
+    return 1
+  fi
+  printf '%s\n' "$answer"
+}
+
+# Core start: the caller has already resolved a whole number of seconds.
+# `keep_start` is 1 when extending a live run, so the original start time is
+# preserved; 0 for a fresh start.
+start_seconds() {
+  local seconds="$1" dim="$2" keep_start="${3:-0}"
+
+  # The prior run's start time must be read before its cleanup wipes the
+  # state file, so capture it up front.
+  local prior_started_at=0
+  if (( keep_start )); then
+    prior_started_at="$(jq -r '.startedAt // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+  fi
+
+  # Replace a running caffeinate first: its cleanup releases the previous
+  # dim and idle state, so the new run starts from a clean slate.
+  if unit_is_active; then
+    stop_unit
+  else
+    local stale_token
+    stale_token="$(state_field token)"
+    if [[ -n $stale_token ]]; then
+      "$0" cleanup --token "$stale_token" >/dev/null 2>&1 || true
+    fi
+  fi
+
+  local now expires token
+  now="$(date +%s)"
+  expires=$(( now + seconds ))
+  token="$$-$(date +%s)-$RANDOM$RANDOM"
+
+  local started_at="$now"
+  (( prior_started_at > 0 )) && started_at="$prior_started_at"
+
+  # Take over the shell's idle override only when nothing else owns it.
+  local idle_owned=false
+  local shell_idle
+  shell_idle="$(omarchy-toggle-idle --status 2>/dev/null | jq -r '.enabled // false' 2>/dev/null || echo false)"
+  if [[ $shell_idle != "true" ]]; then
+    omarchy-toggle-idle stay-awake >/dev/null 2>&1 || true
+    idle_owned=true
+  fi
+
+  local dim_enabled=false dim_monitor="" dim_saved=""
+  if (( dim )); then
+    dim_monitor="$(omarchy-hyprland-monitor-focused 2>/dev/null || true)"
+    [[ -n $dim_monitor ]] || fail "could not find the focused display"
+    dim_saved="$(omarchy-brightness-display --monitor "$dim_monitor" 2>/dev/null | tail -n 1)" || true
+    [[ $dim_saved =~ ^[0-9]+$ ]] || fail "could not read the current display brightness"
+    if ! omarchy-brightness-display --no-osd --monitor "$dim_monitor" "${DIM_PERCENT}%" >/dev/null 2>&1; then
+      fail "could not set the display to ${DIM_PERCENT}%"
+    fi
+    dim_enabled=true
+  fi
+
+  local normalized_hours
+  normalized_hours="$(awk -v s="$seconds" 'BEGIN { printf "%g", s / 3600 }')"
+  local label
+  label="$(format_seconds "$seconds")"
+
+  mkdir -p "$STATE_DIR"
+  jq -nc \
+    --arg token "$token" \
+    --arg hours "$normalized_hours" \
+    --argjson expiresAt "$expires" \
+    --argjson startedAt "$started_at" \
+    --arg boot "$(boot_id)" \
+    --argjson dim "$dim_enabled" \
+    --arg dimMonitor "$dim_monitor" \
+    --arg dimSaved "$dim_saved" \
+    --argjson endSeconds "$seconds" \
+    --argjson idleOwned "$idle_owned" \
+    '{active:true,token:$token,hours:($hours|tonumber),endSeconds:$endSeconds,expiresAt:$expiresAt,startedAt:$startedAt,bootId:$boot,dim:$dim,dimMonitor:$dimMonitor,dimSaved:($dimSaved|if length == 0 then null else tonumber end),idleOwned:$idleOwned}' \
+    | write_state
+
+  local self
+  self="$(self_path)"
+  local attempt ok=0
+  while :; do
+    if systemd-run --user --quiet --collect --unit="$UNIT" \
+        --property="RuntimeMaxSec=${seconds}s" \
+        --property="ExecStopPost=$self cleanup --token=$token" \
+        systemd-inhibit --what=sleep:idle \
+          --who=omarchy-caffeinate \
+          --why="Caffeinate: staying awake for $normalized_hours hour(s)" \
+          --mode=block sleep infinity; then
+      ok=1
+      break
+    fi
+    attempt=$(( attempt + 1 ))
+    if (( attempt >= 20 )); then
+      break
+    fi
+    # A previous unit may still be deactivating; give it a moment.
+    systemctl --user reset-failed "$UNIT.service" >/dev/null 2>&1 || true
+    sleep 0.1
+  done
+  if (( ok == 0 )); then
+    "$self" cleanup --token="$token" >/dev/null 2>&1 || true
+    fail "could not start the $UNIT.service inhibitor"
+  fi
+
+  refresh_shell
+
+  local until_text
+  until_text="$(clock_time "$expires")"
+  local note="Awake for $(format_seconds_long "$seconds"), until $until_text"
+  if [[ $dim_enabled == "true" ]]; then
+    note+=" · display at ${DIM_PERCENT}%"
+  fi
+  echo "omarchy-caffeinate: $note"
+}
+
+# Public start: parse a duration and delegate to start_seconds.
+start() {
+  local hours="" dim=0
+  while (( $# > 0 )); do
+    case "$1" in
+      --dim) dim=1 ;;
+      *) [[ $hours == "" ]] || fail "start takes one duration" ; hours="$1" ;;
+    esac
+    shift
+  done
+
+  # No hours on the command line: fall back to the menu prompt.
+  if [[ -z $hours ]]; then
+    hours="$(ask_hours)" || exit 0
+  else
+    duration_seconds "$hours" >/dev/null || fail "invalid duration '$hours' (use 3, 1.5, 2h, 90m, 3d or 1h30m)"
+  fi
+
+  local seconds
+  seconds="$(duration_seconds "$hours")" || fail "invalid duration '$hours'"
+  (( seconds >= MIN_SECONDS )) || fail "minimum stay is 1 minute"
+
+  start_seconds "$seconds" "$dim"
+}
+
+# Add time to a running run instead of replacing it. A typed bare number in
+# the panel arrives here, so "extend by 3" reads as +3h. When nothing runs,
+# extend is just a start.
+extend() {
+  local spec="" dim=""
+  while (( $# > 0 )); do
+    case "$1" in
+      --dim) dim=1 ;;
+      *) [[ $spec == "" ]] || fail "extend takes one duration" ; spec="$1" ;;
+    esac
+    shift
+  done
+
+  [[ -n $spec ]] || fail "extend requires a duration"
+  duration_seconds "$spec" >/dev/null || fail "invalid duration '$spec' (use 3, 1.5, 2h, 90m, 3d or 1h30m)"
+
+  local add
+  add="$(duration_seconds "$spec")" || fail "invalid duration '$spec'"
+  (( add >= MIN_SECONDS )) || fail "minimum extension is 1 minute"
+
+  if ! read_active || ! unit_is_active; then
+    start_seconds "$add" "${dim:-0}"
+    return
+  fi
+
+  local now expires remaining
+  now="$(date +%s)"
+  expires="$(jq -r '.expiresAt // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+  remaining=$(( expires - now ))
+  (( remaining > 0 )) || remaining=0
+
+  local dim_keep
+  dim_keep="$(jq -r 'if .dim == true then 1 else 0 end' "$STATE_FILE" 2>/dev/null || echo 0)"
+  # An explicit --dim on extend wins; otherwise carry the run's current dim.
+  [[ -n $dim ]] || dim="$dim_keep"
+
+  start_seconds "$(( remaining + add ))" "$dim" 1
+}
+
+# ------------------------------------------------------------------ stop
+
+stop() {
+  local quiet=0
+  [[ ${1:-} == "--quiet" ]] && quiet=1
+
+  local was_active
+  was_active="$(jq -r '.active // false' "$STATE_FILE" 2>/dev/null || echo false)"
+
+  stop_unit
+  # A stale unit (crashed run) still needs its brightness and idle restore.
+  cleanup_run
+
+  # A unit left running without state (started before its state write) is
+  # stray: stop it too.
+  if ! read_active && unit_is_active; then
+    stop_unit
+  fi
+
+  if [[ $quiet != 1 ]]; then
+    refresh_shell
+    if [[ $was_active == "true" ]]; then
+      echo "omarchy-caffeinate: stopped"
+    else
+      echo "omarchy-caffeinate: not running"
+    fi
+  fi
+}
+
+# ---------------------------------------------------------------- status
+
+reconcile() {
+  local now
+  now="$(date +%s)"
+
+  # A run whose deadline passed long ago: the unit should already be gone.
+  if read_active; then
+    local expires token
+    expires="$(jq -r '.expiresAt // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+    token="$(jq -r '.token // empty' "$STATE_FILE" 2>/dev/null || true)"
+    if (( expires > 0 && now > expires + 3 )); then
+      systemctl --user stop "$UNIT.service" >/dev/null 2>&1 || true
+      cleanup_run "$token"
+      return 0
+    fi
+    if ! unit_is_active; then
+      # Unit is gone or still coming up. A fresh start writes its state
+      # within the same frame, so old state files beyond 10 seconds are
+      # leftovers and get cleaned.
+      local age=$(( now - $(state_mtime) ))
+      if (( age > 10 )); then
+        cleanup_run "$token"
+      fi
+      return 0
+    fi
+  fi
+
+  # A unit running without state (started, then state write lost) is stray.
+  if unit_is_active && ! [[ -s $STATE_FILE ]]; then
+    systemctl --user stop "$UNIT.service" >/dev/null 2>&1 || true
+  fi
+}
+
+status() {
+  local json=0
+  [[ ${1:-} == "--json" ]] && json=1
+
+  reconcile >/dev/null 2>&1 || true
+
+  local active hours expires remaining dim_monitor dim started_at
+  active=false
+  hours=0
+  expires=0
+  remaining=0
+  dim=false
+  dim_monitor=""
+  started_at=0
+  if read_active; then
+    active=true
+    hours="$(state_field hours)"
+    expires="$(jq -r '.expiresAt // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+    started_at="$(jq -r '.startedAt // 0' "$STATE_FILE" 2>/dev/null || echo 0)"
+    dim_monitor="$(jq -r '.dimMonitor // empty' "$STATE_FILE" 2>/dev/null || true)"
+    dim="$(jq -r '.dim // false' "$STATE_FILE" 2>/dev/null || echo false)"
+    remaining=$(( expires - $(date +%s) ))
+    (( remaining > 0 )) || remaining=0
+  fi
+
+  if (( json )); then
+    jq -nc \
+      --argjson active "$active" \
+      --argjson hours "$hours" \
+      --argjson expiresAt "$expires" \
+      --argjson startedAt "$started_at" \
+      --argjson remainingSeconds "$remaining" \
+      --arg label "$(format_seconds "$remaining")" \
+      --arg labelLong "$(format_seconds_long "$remaining")" \
+      --argjson dim "$dim" \
+      --arg dimMonitor "$dim_monitor" \
+      '{active:$active,hours:$hours,expiresAt:$expiresAt,startedAt:$startedAt,remainingSeconds:$remainingSeconds,label:$label,labelLong:$labelLong,dim:$dim,dimMonitor:$dimMonitor}'
+  else
+    if [[ $active == "true" ]]; then
+      local ends_at
+      ends_at="$(clock_time "$expires")"
+      if is_true "$dim"; then
+        echo "omarchy-caffeinate: active for $(format_seconds_long "$remaining"), until $ends_at (display at ${DIM_PERCENT}%)"
+      else
+        echo "omarchy-caffeinate: active for $(format_seconds_long "$remaining"), until $ends_at"
+      fi
+    else
+      echo "omarchy-caffeinate: not running"
+    fi
+  fi
+}
+
+# Interactive set-hours flow used by the Omarchy menu. Asks for a duration
+# and (when the caller asks for it) dims the display as part of the same
+# flow.
+prompt() {
+  local dim=0
+  while (( $# > 0 )); do
+    case "$1" in
+      --dim) dim=1 ;;
+    esac
+    shift
+  done
+
+  local hours
+  if ! hours="$(ask_hours)"; then
+    exit 1
+  fi
+
+  exec start "$hours" ${dim:+--dim}
+}
+
+# --------------------------------------------------------------- dispatch
+
+usage() {
+  cat <<USAGE
+Usage: omarchy-caffeinate [start [duration] [--dim] | extend <duration> [--dim] |
+       stop | status [--json] | active | prompt [--dim] | cleanup --token <token>]
+
+  start [duration] [--dim]  Stay awake for duration. A bare number is hours:
+                            3 = 3h, 36 = 36h. Units: 90m, 2h, 1.5, 3d, 1h30m.
+                            Days are accepted (3d) but never shown; labels stay
+                            in hours. Without a duration it prompts in the menu.
+  extend <duration> [--dim] Add time to a running run. Bare numbers are hours.
+                            With nothing running it behaves like start.
+  --dim                     Also set the focused display to ${DIM_PERCENT}% brightness;
+                            the previous level is restored on stop/expiry.
+  stop                      Stop caffeinating and restore.
+  status [--json]           Current state ("36h" label with --json).
+  active                    Exit 0 when caffeinate is running.
+  prompt [--dim]            Menu prompt for duration, then start.
+  cleanup --token <tok>     Internal: run by the systemd unit on stop/expiry.
+
+The run also takes over the shell idle override, so no lock or screensaver
+fires while it lasts. Sleep and idle are blocked through
+omarchy-caffeinate.service (systemd --user). Minimum 1 minute, max 7 days.
+USAGE
+}
+
+main() {
+  [[ $# > 0 ]] || { usage; exit 0; }
+  local verb="$1" arg
+  shift || true
+
+  case "$verb" in
+    start) start "$@" ;;
+    extend | add | snooze) extend "$@" ;;
+    stop | off | cancel) stop "$@" ;;
+    status) status "$@" ;;
+    active) reconcile >/dev/null 2>&1 || true; read_active && unit_is_active ;;
+    -i | prompt | interactive) prompt "$@" ;;
+    cleanup)
+      local token=""
+      while (( $# > 0 )); do
+        case "$1" in
+          --token) token="${2:-}"; shift ;;
+        esac
+        shift
+      done
+      cleanup_run "$token"
+      ;;
+    duration) duration_seconds "${1:-}" ;;
+    # Accept either a duration spec ("36h") or raw seconds ("129600").
+    format)
+      local value="${1:-0}" seconds
+      seconds="$(duration_seconds "$value" 2>/dev/null || true)"
+      [[ -n $seconds ]] || seconds="$value"
+      format_seconds "$seconds"
+      ;;
+    reconcile) reconcile ;;
+    -h | --help | help) usage ;;
+    *) start "$verb" "$@" ;;
+  esac
+}
+
+main "$@"

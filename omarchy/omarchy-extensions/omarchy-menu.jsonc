@@ -35,6 +35,20 @@
     "action": "systemctl --user restart opencode-server.service && omarchy-notification-send -g 󰚩 'Opencode' 'Server restarted'"
   },
 
+  // Caffeinate: keep the machine awake for a chosen duration. Presets are
+  // one click; Custom opens the same typed-duration prompt the bar panel
+  // uses. Bare numbers are hours (1 = 1h); units m/h/d are accepted.
+  "trigger.toggle.caffeinate": {"icon":"󰅶","label":"Caffeinate"},
+  "trigger.toggle.caffeinate.30m": {"icon":"󰅶","label":"30 minutes","action":"omarchy-caffeinate start 30m"},
+  "trigger.toggle.caffeinate.1h": {"icon":"󰅶","label":"1 hour","action":"omarchy-caffeinate start 1h"},
+  "trigger.toggle.caffeinate.2h": {"icon":"󰅶","label":"2 hours","action":"omarchy-caffeinate start 2h"},
+  "trigger.toggle.caffeinate.4h": {"icon":"󰅶","label":"4 hours","action":"omarchy-caffeinate start 4h"},
+  "trigger.toggle.caffeinate.8h": {"icon":"󰅶","label":"8 hours","action":"omarchy-caffeinate start 8h"},
+  "trigger.toggle.caffeinate.12h": {"icon":"󰅶","label":"12 hours","action":"omarchy-caffeinate start 12h"},
+  "trigger.toggle.caffeinate.24h": {"icon":"󰅶","label":"24 hours","action":"omarchy-caffeinate start 24h"},
+  "trigger.toggle.caffeinate.custom": {"icon":"󰅶","label":"Custom…","action":"omarchy-caffeinate prompt"},
+  "trigger.toggle.caffeinate.stop": {"icon":"󰅶","label":"Stop caffeinate","when":"omarchy-caffeinate active","action":"omarchy-caffeinate stop && omarchy-notification-send -g 󰅶 'Caffeinate' 'Stopped'"},
+
   // Launch the shared-server opencode client from the Defaults > Agent row.
   // Fields are restated because partial overrides normalize empty label/icon
   // and would otherwise clobber the default row's.

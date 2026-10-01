@@ -29,6 +29,8 @@
       "~/.config/ghostty": "allow",
       "~/.config/ghostty/*": "allow",
       "~/.opencode/*": "allow",
+      "~/.agents": "allow",
+      "~/.agents/*": "allow",
       "~/Tiga/*": "allow",
       "~/Projects": "allow",
       "~/Projects/*": "allow",
@@ -86,6 +88,17 @@
       },
       "enabled": true,
       "timeout": 120000
+    },
+    "pencil": {
+      "command": [
+        "/tmp/.mount_penel9Vxi/resources/app.asar.unpacked/out/mcp-server-linux-x64",
+        "--app",
+        "desktop",
+        "--agent",
+        "openCodeCLI"
+      ],
+      "enabled": true,
+      "type": "local"
     }
   },
   "provider": {
