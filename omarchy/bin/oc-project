@@ -44,11 +44,17 @@
 #
 #     <launcher> --app-id=org.omarchy.opencode --title=oc: <dir> oc <dir>
 #
-# The default launcher is `xdg-terminal-exec`, not `omarchy-launch-tui`:
-# omarchy-launch-tui only parses `--app-id=` and hardcodes
-# `xdg-terminal-exec --app-id=$APP_ID -e "$1" "${@:2}"`, so it cannot forward
-# a `--title`. Calling xdg-terminal-exec directly is the only way to satisfy
-# both the class and the title. It supports `--app-id=` and `--title=`.
+# The default launch mirrors the binding it replaced:
+#
+#     setsid uwsm-app -- xdg-terminal-exec \
+#         --app-id=org.omarchy.opencode --title=oc: <dir> oc <dir>
+#
+# `setsid uwsm-app --` puts the terminal in a UWSM/systemd app scope, as the
+# old binding did. `xdg-terminal-exec` is called directly rather than through
+# `omarchy-launch-tui` because the latter only parses `--app-id=` and
+# hardcodes `xdg-terminal-exec --app-id=$APP_ID -e "$1" "${@:2}"`, so it cannot
+# forward a `--title`. Setting `OC_PROJECT_LAUNCH` replaces the launcher with a
+# single command that receives the same four trailing arguments.
 #
 # `oc-project` with no subcommand is the wired default flow:
 #   pick -> focus <dir>; if focus reports EXIT_NOT_FOUND (3), open <dir>;
@@ -67,7 +73,8 @@
 #   OC_PROJECT_MENU_INPUT    default omarchy-menu-input
 #   OC_PROJECT_HYPRCTL       default hyprctl
 #   OC_PROJECT_PROC_ROOT     default /proc
-#   OC_PROJECT_LAUNCH        default xdg-terminal-exec
+#   OC_PROJECT_LAUNCH        overrides the launcher command (default is
+#                            `setsid uwsm-app -- xdg-terminal-exec`)
 #   OC_PROJECT_FOCUS         default (internal focus); overrides focus in the
 #                            default flow only, for tests
 
@@ -83,7 +90,7 @@ MENU_SELECT="${OC_PROJECT_MENU_SELECT:-omarchy-menu-select}"
 MENU_INPUT="${OC_PROJECT_MENU_INPUT:-omarchy-menu-input}"
 HYPRCTL="${OC_PROJECT_HYPRCTL:-hyprctl}"
 PROC_ROOT="${OC_PROJECT_PROC_ROOT:-/proc}"
-LAUNCH="${OC_PROJECT_LAUNCH:-xdg-terminal-exec}"
+LAUNCH="${OC_PROJECT_LAUNCH:-}"
 FOCUS_CMD="${OC_PROJECT_FOCUS:-}"
 
 # Window class set on the launched terminal.
@@ -227,7 +234,12 @@ cmd_pick() {
   # A cancel at either menu (non-zero) is propagated quietly: no message,
   # no stdout. The `|| return $?` keeps `set -e` from aborting and preserves
   # the menu's real exit status.
-  selection="$(cmd_pick_rows | "$MENU_SELECT" 'Open opencode in…')" || return $?
+  #
+  # Rows are fed through process substitution, not a pipe: under `pipefail` a
+  # menu that exits before reading every row would SIGPIPE `cmd_pick_rows` and
+  # surface 141 instead of the menu's own status. A redirection contributes no
+  # status, so only the menu's exit code survives.
+  selection="$("$MENU_SELECT" 'Open opencode in…' < <(cmd_pick_rows))" || return $?
 
   if [[ $selection == "$OTHER_SELECTION" ]]; then
     path="$("$MENU_INPUT" 'Directory')" || return $?
@@ -265,20 +277,35 @@ path_of_dir_arg() {
 # Empty output when no window matches, jq is missing, the JSON is malformed,
 # or any /proc entry is unreadable. Never fails, never crashes.
 window_address_for_dir() {
-  local dir="$1" clients pid addr child argpath canon
-  local -a argv=()
+  local dir="$1" clients pid addr child argpath canon kids_file kids
+  local -a argv=() child_pids=()
 
   command -v jq >/dev/null 2>&1 || return 0
 
   clients="$("$HYPRCTL" clients -j 2>/dev/null)" || return 0
   [[ -n $clients ]] || return 0
 
-  # Iterate over "pid<TAB>address" pairs for the opencode class only.
+  # Iterate over "pid<TAB>address" pairs for the opencode class only. jq
+  # filters out null/mistyped fields so we never walk /proc/null or dispatch
+  # address:null.
   while IFS=$'\t' read -r pid addr; do
     [[ -n $pid && -n $addr ]] || continue
 
-    while IFS= read -r child; do
-      [[ -n $child ]] || continue
+    # /proc/<pid>/task/<pid>/children is space-separated pids on one line,
+    # with a trailing space and NO trailing newline. `read` per line returns
+    # non-zero at that EOF and skips the body, so read the whole file and
+    # split on whitespace instead.
+    kids_file="$PROC_ROOT/$pid/task/$pid/children"
+    [[ -r $kids_file ]] || continue
+    # `$(< file)` alone is a bash fast-path, but adding a redirection to it
+    # turns the whole thing into a redirection-only command with empty output,
+    # so read through cat here.
+    kids="$(cat "$kids_file" 2>/dev/null)" || continue
+    # shellcheck disable=SC2206 # word-splitting is the point (space-separated)
+    child_pids=($kids)
+
+    for child in "${child_pids[@]}"; do
+      [[ $child =~ ^[0-9]+$ ]] || continue
       [[ -r "$PROC_ROOT/$child/cmdline" ]] || continue
 
       argv=()
@@ -295,9 +322,12 @@ window_address_for_dir() {
         printf '%s\n' "$addr"
         return 0
       fi
-    done <"$PROC_ROOT/$pid/task/$pid/children" 2>/dev/null
+    done
   done < <(printf '%s' "$clients" | jq -r --arg class "$WINDOW_CLASS" \
-    '.[]? | select(.class == $class) | "\(.pid)\t\(.address)"' 2>/dev/null)
+    '.[]? | select(.class == $class)
+          | select((.pid | type) == "number")
+          | select((.address | type) == "string" and (.address | length) > 0)
+          | "\(.pid)\t\(.address)"' 2>/dev/null)
   return 0
 }
 
@@ -325,6 +355,11 @@ cmd_focus() {
 # Exits 1 with a message on stderr (and a best-effort notification) when
 # <dir> is not a directory; otherwise builds and runs the launcher argv and
 # returns its status.
+#
+# The default launch mirrors the binding this replaced: `setsid uwsm-app --`
+# so the terminal lands in a UWSM/systemd app scope (app tracking, slice
+# assignment, double-launch avoidance). `omarchy-launch-tui` cannot carry the
+# `--title`, so the argv is built here instead of going through it.
 cmd_open() {
   local dir="$1" canon
   if [[ -n $dir ]]; then
@@ -336,7 +371,12 @@ cmd_open() {
     return 1
   fi
 
-  "$LAUNCH" "--app-id=$WINDOW_CLASS" "--title=oc: $canon" oc "$canon"
+  local -a argv=("--app-id=$WINDOW_CLASS" "--title=oc: $canon" oc "$canon")
+  if [[ -n $LAUNCH ]]; then
+    "$LAUNCH" "${argv[@]}"
+  else
+    setsid uwsm-app -- xdg-terminal-exec "${argv[@]}"
+  fi
 }
 
 # cmd_focus_seam <dir> -> run the focus step of the default flow.

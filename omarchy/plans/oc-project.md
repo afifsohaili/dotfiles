@@ -1,6 +1,6 @@
 # oc-project: opencode directory picker
 
-Status: **in progress** (Phases 1-4 done; Phase 5 review pending)
+Status: **done** (Phases 1-5 complete; review fixes landed)
 
 ## Goal
 
@@ -121,8 +121,30 @@ injectable seams via environment variables:
 - Live check: launching through `xdg-terminal-exec` produced a window with
   class `org.omarchy.opencode` and title `oc: /tmp/test`.
 
-### Phase 5 — review pass (PENDING)
-- Full-suite run, coverage check, update this doc's divergence log.
+### Phase 5 — review pass (DONE)
+- Full-suite run, coverage check, divergence log updated.
+- Review found one blocker and two majors in `focus`; all fixed and pinned by
+  a new `oc_project_review_test.sh`. Suite is now 6 files / 138 assertions.
+- Verdict after fixes: matches the plan; same-dir focus verified against live
+  windows (focus `/home/afifsohaili/Projects` returned the window address and
+  exit 0).
+
+## Review findings and fixes (Phase 5)
+
+| Severity | Location | Issue | Fix |
+| --- | --- | --- | --- |
+| blocker | `oc-project` `window_address_for_dir` | Read `children` with `read` per line. The kernel writes space-separated pids on one line with a trailing space and no newline, so `read` returns non-zero at EOF and the loop body never ran. Every `focus` returned `EXIT_NOT_FOUND`; same-dir focus never matched a real window. | Read the whole file and word-split into an array. |
+| major | same function | Missing/unreadable `children` file aborted the walk under `set -e` and leaked stderr. | Read via `cat ... 2>/dev/null || continue`; skip unreadable entries. |
+| major | `cmd_open` | Launched `xdg-terminal-exec` directly, dropping the `setsid uwsm-app --` scope the old binding used. | Default launch is now `setsid uwsm-app -- xdg-terminal-exec`; `OC_PROJECT_LAUNCH` still overrides. |
+| minor | jq filter | `null` pid/address passed the `-n` check and produced `/proc/null` walks and `address:null`. | jq now requires a numeric `pid` and a non-empty string `address`. |
+| latent | `cmd_pick` | `cmd_pick_rows \| "$MENU_SELECT"` under `pipefail`: a menu that exits before reading every row SIGPIPEs the writer and surfaces 141 instead of the menu's status. | Feed rows through process substitution; only the menu's status survives. Pinned by a test. |
+
+### Coverage added by the review test
+- Real kernel `children` bytes: single pid (trailing space, no newline) and
+  multiple pids space-separated on one line.
+- `null` pid client skipped without aborting the walk.
+- Client with no `children` file tolerated; a later matching client is found.
+- Picker survives a menu that ignores stdin (no SIGPIPE under `pipefail`).
 
 ## Divergence log
 
@@ -195,3 +217,17 @@ injectable seams via environment variables:
   unchanged.
 - `oc_project_open_test.sh` and `oc_project_feature_test.sh` add 46
   assertions; the suite is now 5 files / 126 assertions.
+
+### Phase 5
+- `OC_PROJECT_LAUNCH` no longer defaults to a value; an empty value means the
+  built-in `setsid uwsm-app -- xdg-terminal-exec` argv. The plan implied a
+  single default command name.
+- The review test file `oc_project_review_test.sh` is permanent, not a
+  throwaway: it pins the real `/proc` `children` byte format, which the
+  original focus/feature fixtures wrote incorrectly (one pid per line).
+- Two blockers beyond the plan's scope were found and fixed: the `children`
+  read format and the `pipefail`/SIGPIPE pipeline in `cmd_pick`. See the
+  "Review findings and fixes" table.
+- `omarchy:summary`/`omarchy:args` metadata is present but inert: Omarchy's
+  command discovery scans only `omarchy-*` binaries, and this file is
+  `oc-project`. It is a keybinding target, not an `omarchy` subcommand.
