@@ -101,6 +101,10 @@ done
 # 2. Linux/Omarchy machine glue: omarchy/bin -> ~/.local/bin, and the systemd
 #    units -> ~/.config/systemd/user. Also restores links that
 #    `omarchy reinstall configs` may have moved aside.
+#
+#    Sets LINK_FILES_CHANGED=1 when it creates or relinks anything, so the
+#    caller can skip daemon-reload/restart on an unchanged rerun.
+LINK_FILES_CHANGED=0
 link_files() {
   local srcdir="$1" destdir="$2" name src dest backup
   [ -d "$srcdir" ] || return 0
@@ -123,21 +127,27 @@ link_files() {
     fi
 
     run ln -s "$src" "$dest"
+    LINK_FILES_CHANGED=1
   done
 }
 
 if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/bin" "$HOME/.local/bin"
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
-  run systemctl --user daemon-reload
 
-  # Restart the shared server when its unit changed, so a new ExecStart (e.g.
-  # the v2 binary resolution) takes effect without a manual step. Failure is
-  # non-fatal: the machine may not have opencode installed yet.
-  opencode_unit="$HOME/.config/systemd/user/opencode-server.service"
-  if [ -e "$opencode_unit" ] && systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
-    run systemctl --user restart opencode-server.service 2>/dev/null || \
-      say "warn: could not restart opencode-server.service (is opencode v2 installed?)"
+  # Idempotent rerun: only reload/restart when a unit or binary link actually
+  # changed. A restart kills running TUI sessions, so never do it for nothing.
+  if [ "$LINK_FILES_CHANGED" -eq 1 ]; then
+    run systemctl --user daemon-reload 2>/dev/null || \
+      say "warn: systemctl --user unavailable; skipped daemon-reload"
+
+    opencode_unit="$HOME/.config/systemd/user/opencode-server.service"
+    if [ -e "$opencode_unit" ] && systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
+      run systemctl --user restart opencode-server.service 2>/dev/null || \
+        say "warn: could not restart opencode-server.service (is opencode v2 installed?)"
+    fi
+  else
+    say "systemd units unchanged: no daemon-reload, no restart"
   fi
 
   # pnpm global-install policy. pnpm v11 resolves bare imports from a hoisted
@@ -239,8 +249,10 @@ fi
 
 # 4b. Shared opencode server password. V2 servers require one; the login shell
 #     and the systemd unit both read this file, so a client can authenticate.
+#     Requires a non-empty value: an `OPENCODE_PASSWORD=` line from the example
+#     template must not satisfy the check.
 OPENCODE_ENV="$DOTFILES/shell/shared/opencode.env"
-if grep -q '^OPENCODE_PASSWORD=' "$OPENCODE_ENV" 2>/dev/null; then
+if grep -Eq '^OPENCODE_PASSWORD=.+' "$OPENCODE_ENV" 2>/dev/null; then
   say "opencode: OPENCODE_PASSWORD present in $OPENCODE_ENV"
 elif [ "$DRY_RUN" -eq 1 ]; then
   printf '[dry-run] generate OPENCODE_PASSWORD in %s\n' "$OPENCODE_ENV"
@@ -280,9 +292,8 @@ case "$(uname -s)" in
     say "      herdr plugin install crierr/herdr-arrange"
     say "      herdr plugin install abrose/herdr-numbered-workspaces"
     say "      herdr integration install opencode"
-    say "  - Reload systemd units after re-running this installer:"
-    say "      systemctl --user daemon-reload"
-    say "      systemctl --user restart opencode-server.service"
+    say "  - This installer reloads systemd and restarts opencode-server only when"
+    say "    a binary or unit link changed; an unchanged rerun leaves it running."
     say "  - Shell config loads from ~/.bashrc (no zsh needed)."
     say "  - Fill shell/shared/secrets.sh, then re-run install.sh (or run"
     say "      git update-index --skip-worktree shell/shared/secrets.sh)."
