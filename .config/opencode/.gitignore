@@ -1,6 +1,9 @@
 node_modules
 package.json
 bun.lock
-.tasks.db
-.tasks.db-shm
-.tasks.db-wal
+service.json
+# herdr's installer writes these; they are managed by `herdr integration install opencode`
+plugins/herdr-agent-state.js
+herdr-tui-session.js
+herdr-opencode/
+tui.jsonc

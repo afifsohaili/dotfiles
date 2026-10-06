@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "theme": {
+    "name": "system",
+    "mode": "system"
+  },
+  "keybinds": {
+    "session.half.page.down": "ctrl+f",
+    "session.half.page.up": "ctrl+b",
+    "session.messages_last_user": "<leader>6",
+    "session.first": "<leader>1",
+    "session.last": "<leader>9",
+    "session.pin.toggle": "none",
+    "session.background": "none",
+    "session.quick_switch.1": "none",
+    "session.quick_switch.6": "none",
+    "session.quick_switch.9": "none",
+    "session.tab.select.1": "ctrl+1",
+    "session.tab.select.6": "ctrl+6",
+    "session.tab.select.9": "ctrl+9"
+  },
+  "scroll": {
+    "speed": 4
+  },
+  "session": {
+    "tps": true
+  },
+  "attention": {
+    "notifications": true
+  },
+  "plugins": [
+    "./plugins/ntfy",
+    "./herdr-opencode"
+  ]
+}

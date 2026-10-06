@@ -7,7 +7,7 @@
 # non-opencode windows ignored, missing/unreadable children or cmdline
 # tolerated, cmdline with no --dir, the correct client focused among many,
 # trailing-slash / `.` / symlink canonicalisation, malformed hyprctl JSON,
-# empty client list, and a failing jq.
+# empty client list, a failing jq, and the V2 positional-directory form.
 #
 # Fixtures: a fake `hyprctl` (prints a clients JSON file for `clients -j`,
 # records `dispatch ...` to a log) and an injected `OC_PROJECT_PROC_ROOT`
@@ -239,3 +239,22 @@ assert_status 0 "$FOCUS_STATUS" "fallback dispatch still exits 0"
 assert_eq "0x77711" "$FOCUS_OUT" "fallback dispatch prints address"
 assert_contains "$(cat "$dispatch_log")" "hl.dsp.focus" "primary dispatch form attempted first"
 assert_contains "$(cat "$dispatch_log")" "focuswindow address:0x77711" "fallback focuswindow used"
+
+# --- 12. V2 positional directory form ------------------------------------
+# V2 has no `attach --dir`; `oc` runs `opencode --server URL <flags> <dir>`.
+new_case v2positional
+add_child 1700 1701
+set_cmdline 1701 opencode --server http://127.0.0.1:15001 --continue "$target"
+add_client 1700 0x88812 org.omarchy.opencode
+run_focus "$target"
+assert_status 0 "$FOCUS_STATUS" "V2 positional dir (--continue) exits 0"
+assert_eq "0x88812" "$FOCUS_OUT" "V2 positional dir prints address"
+
+# --- 13. V2 form with an explicit session id ------------------------------
+new_case v2session
+add_child 1800 1801
+set_cmdline 1801 opencode --server http://127.0.0.1:15001 --session ses_abc "$target"
+add_client 1800 0x99913 org.omarchy.opencode
+run_focus "$target"
+assert_status 0 "$FOCUS_STATUS" "V2 positional dir (--session) exits 0"
+assert_eq "0x99913" "$FOCUS_OUT" "V2 session form prints address"

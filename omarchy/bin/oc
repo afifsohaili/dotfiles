@@ -43,4 +43,7 @@ if ! listening; then
   exit 1
 fi
 
-exec opencode attach "http://127.0.0.1:$PORT" --dir "$DIR" --continue
+# V2: `opencode attach` is gone. The client takes the directory positionally
+# and connects with --server. OPENCODE_PASSWORD is exported by
+# shell/shared/opencode.sh and matches the service's EnvironmentFile.
+exec opencode --server "http://127.0.0.1:$PORT" --continue "$DIR"

@@ -49,7 +49,7 @@ herdr agent start <name> --kind opencode --pane "$worker_pane" -- --agent <AGENT
 ```
 
 - `<name>`: unique, matches `[a-z][a-z0-9_-]{0,31}`.
-- `<AGENT>`: an agent defined in `~/.config/opencode/agent/*.md` (e.g. `ollama-glm53`, `ollama-dsv4f`).
+- `<AGENT>`: an agent defined in `~/.config/opencode/agents/*.md` (e.g. `ollama-glm53`, `ollama-dsv4f`).
 - `<MODEL>`: `provider/model` (e.g. `ollama-cloud/deepseek-v4.1-flash`). Read it from the agent file's `model:` frontmatter if not given explicitly.
 
 `agent start` returns only after herdr detects opencode and marks it ready. If it returns `agent_not_ready`, wait until the agent is idle before prompting.

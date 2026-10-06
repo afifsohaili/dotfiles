@@ -256,20 +256,28 @@ cmd_pick() {
 
 # ----------------------------------------------------------------- focus
 
-# path_of_dir_arg <argv...> -> the argument immediately after a literal
-# `--dir` token, if any. The caller has already split the NUL-separated
-# cmdline into one argument per array slot. Prints the path, or nothing when
-# `--dir` is absent. A path containing spaces is not supported, which matches
-# this machine's opencode invocations.
+# path_of_dir_arg <argv...> -> the directory argument, if any. Prints the path,
+# or nothing when none is present. Prefers the argument after a literal `--dir`
+# token (V1 attach form); falls back to any absolute path that exists as a
+# directory (V2 form: `opencode --server URL --continue /path/dir`). A path
+# containing spaces is not supported, which matches this machine's opencode
+# invocations.
 path_of_dir_arg() {
-  local arg want=0
+  local arg want=0 candidate=""
   for arg in "$@"; do
     if (( want )); then
       printf '%s\n' "$arg"
       return 0
     fi
-    [[ $arg == --dir ]] && want=1
+    if [[ $arg == --dir ]]; then
+      want=1
+      continue
+    fi
+    if [[ $arg == /* && -d $arg ]]; then
+      candidate=$arg
+    fi
   done
+  [[ -n $candidate ]] && printf '%s\n' "$candidate"
   return 0
 }
 

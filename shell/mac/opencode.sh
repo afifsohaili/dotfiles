@@ -1,13 +1,6 @@
-# opencode machine overrides (macOS)
-export OPENCODE_CONFIG="$HOME/Projects/dotfiles/.config/opencode/opencode.mac.json"
-
-# Per-machine opencode env (ntfy topic/url, etc). Gitignored. Falls back to the
-# macOS defaults if the file is absent.
-OPENCODE_ENV_FILE="$HOME/Projects/dotfiles/shell/shared/opencode.env"
-if [[ -f "$OPENCODE_ENV_FILE" ]]; then
-  set -a
-  source "$OPENCODE_ENV_FILE"
-  set +a
-else
-  export OPENCODE_NTFY_URL="http://afifs-macbook-pro.taila5c1b8.ts.net:15001"
-fi
+# opencode machine defaults (macOS)
+#
+# The shared server URL used for the ntfy notification click-through. This is
+# only a default: an OPENCODE_NTFY_URL in shell/shared/opencode.env wins, since
+# shell/shared/opencode.sh sources that file first.
+export OPENCODE_NTFY_URL="${OPENCODE_NTFY_URL:-http://afifs-macbook-pro.taila5c1b8.ts.net:15001}"

@@ -1,8 +1,7 @@
 ---
 description: Adversarial reviewer. Use to review a diff, branch, PR, plan, or design for correctness, edge cases, and spec drift — before merge or before building on it.
 mode: all
-model: opencode/gpt-6.1-sol
-variant: max
+model: opencode/gpt-6.1-sol#max
 ---
 
 You are a rigorous, adversarial reviewer. Your job is to find what is wrong, missing, or risky — not to approve.

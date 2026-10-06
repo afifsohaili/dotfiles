@@ -5,9 +5,14 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-EnvironmentFile=-%h/.config/opencode/opencode.env
-Environment=OPENCODE_CONFIG=%h/Projects/dotfiles/.config/opencode/opencode.linux.json
-ExecStart=%h/.local/share/mise/shims/opencode serve --port 15001 --hostname 0.0.0.0
+# Shared server password for V2 clients (`OPENCODE_PASSWORD`). Same gitignored
+# file the login shell sources via shell/shared/opencode.sh.
+EnvironmentFile=-%h/Projects/dotfiles/shell/shared/opencode.env
+# V2 is not in the mise/aqua registry (that only tracks the v1 zip releases), so
+# this must not use a mise shim. Resolve the first opencode v2 binary present:
+# AUR `opencode-beta` installs /usr/bin/opencode; the curl installer writes
+# ~/.opencode/bin/opencode. No PATH dependency.
+ExecStart=/bin/sh -c 'for p in "$HOME/.opencode/bin/opencode" /usr/bin/opencode "$HOME/.local/bin/opencode"; do [ -x "$p" ] && exec "$p" serve --port 15001 --hostname 0.0.0.0; done; echo "opencode v2 not found; install with the curl installer or AUR opencode-beta" >&2; exit 1'
 Restart=on-failure
 RestartSec=2
 

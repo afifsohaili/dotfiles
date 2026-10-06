@@ -1,11 +1,14 @@
-# opencode machine overrides (Arch/Omarchy)
-export OPENCODE_CONFIG="$HOME/Projects/dotfiles/.config/opencode/opencode.linux.json"
+# opencode machine defaults (Arch/Omarchy)
+#
+# The shared server URL used for the ntfy notification click-through. This is
+# only a default: an OPENCODE_NTFY_URL in shell/shared/opencode.env wins, since
+# shell/shared/opencode.sh sources that file first.
+export OPENCODE_NTFY_URL="${OPENCODE_NTFY_URL:-http://afifsohailig4.taila5c1b8.ts.net:15001}"
 
-# Per-machine opencode env (ntfy topic/url, etc). Gitignored. The systemd
-# opencode-server.service reads the same file via EnvironmentFile=.
-OPENCODE_ENV_FILE="$HOME/Projects/dotfiles/shell/shared/opencode.env"
-if [[ -f "$OPENCODE_ENV_FILE" ]]; then
-  set -a
-  source "$OPENCODE_ENV_FILE"
-  set +a
-fi
+# The curl installer writes ~/.opencode/bin/opencode; the AUR package installs
+# to /usr/bin. Prepend the curl-installer path so both install methods resolve,
+# and so an older mise-managed v1 shim stays out of the way.
+case ":$PATH:" in
+  *":$HOME/.opencode/bin:"*) ;;
+  *) export PATH="$HOME/.opencode/bin:$PATH" ;;
+esac

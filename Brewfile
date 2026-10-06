@@ -163,6 +163,8 @@ brew "redis"
 brew "redis@6.2", restart_service: :changed
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
+# Python package/project manager; runs the websearch MCP server via `uv run`
+brew "uv"
 # Safe, concurrent, practical language
 brew "rust"
 # Static analysis and lint tool, for (ba)sh scripts

@@ -21,7 +21,7 @@ for arg in "$@"; do
 done
 
 HERDR_INSTALL_URL="https://herdr.dev/install.sh"
-OPENCODE_DOWNLOAD_URL="https://opencode.ai/download"
+OPENCODE_DOWNLOAD_URL="https://opencode.ai/v2"
 SECRETS_PATH="shell/shared/secrets.sh"
 
 # Which rc file gets the shim. The login shell decides; overridable for testing
@@ -129,6 +129,15 @@ if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
   run systemctl --user daemon-reload
 
+  # Restart the shared server when its unit changed, so a new ExecStart (e.g.
+  # the v2 binary resolution) takes effect without a manual step. Failure is
+  # non-fatal: the machine may not have opencode installed yet.
+  opencode_unit="$HOME/.config/systemd/user/opencode-server.service"
+  if [ -e "$opencode_unit" ] && systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
+    run systemctl --user restart opencode-server.service 2>/dev/null || \
+      say "warn: could not restart opencode-server.service (is opencode v2 installed?)"
+  fi
+
   # pnpm global-install policy. pnpm v11 resolves bare imports from a hoisted
   # node_modules only; @pen.dev/cli imports css-tree without declaring it, so the
   # default isolated layout breaks `pen`. This file is read whenever a global
@@ -226,30 +235,52 @@ else
   say "skip-worktree: not a git repo, skipping"
 fi
 
+# 4b. Shared opencode server password. V2 servers require one; the login shell
+#     and the systemd unit both read this file, so a client can authenticate.
+OPENCODE_ENV="$DOTFILES/shell/shared/opencode.env"
+if grep -q '^OPENCODE_PASSWORD=' "$OPENCODE_ENV" 2>/dev/null; then
+  say "opencode: OPENCODE_PASSWORD present in $OPENCODE_ENV"
+elif [ "$DRY_RUN" -eq 1 ]; then
+  printf '[dry-run] generate OPENCODE_PASSWORD in %s\n' "$OPENCODE_ENV"
+else
+  ( umask 077; printf 'OPENCODE_PASSWORD=%s\n' "$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >> "$OPENCODE_ENV" )
+  say "opencode: generated OPENCODE_PASSWORD in $OPENCODE_ENV"
+fi
+
 # 5. Next steps, per OS.
 say ""
 say "== Next steps =="
 case "$(uname -s)" in
   Darwin)
     say "macOS:"
-    say "  - Tools (herdr, opencode, neovim) come from Homebrew:"
+    say "  - Tools (herdr, neovim) come from Homebrew:"
     say "      brew bundle install --file \"$DOTFILES/Brewfile\""
+    say "  - opencode v2 (curl installer replaces the v1 ~/.opencode/bin binary):"
+    say "      curl -fsSL https://opencode.ai/v2/install | bash"
     say "  - Reload your shell: source ~/.zshrc"
     ;;
   Linux)
     say "Linux / Omarchy:"
-    say "  - Packages (neovim, jq; opencode comes next):"
-    say "      omarchy-pkg-add neovim jq"
+    say "  - Packages (neovim, jq, uv; uv runs the websearch MCP server):"
+    say "      omarchy-pkg-add neovim jq uv"
     say "  - Go via mise (mise ships with Omarchy):"
     say "      mise use -g go@latest"
     say "  - herdr:"
     say "      curl -fsSL $HERDR_INSTALL_URL | sh"
-    say "  - opencode, official installer or AUR:"
-    say "      $OPENCODE_DOWNLOAD_URL"
+    say "  - opencode v2. NOT via mise: the mise/aqua registry only tracks v1."
+    say "    Either the AUR package (native, /usr/bin/opencode):"
+    say "      paru -S opencode-beta"
+    say "    or the curl installer (~/.opencode/bin/opencode):"
+    say "      curl -fsSL https://opencode.ai/v2/install | bash"
+    say "    If v1 was mise-managed, drop it so the v2 binary wins:"
+    say "      mise uninstall opencode"
     say "  - herdr plugins and integration:"
     say "      herdr plugin install crierr/herdr-arrange"
     say "      herdr plugin install abrose/herdr-numbered-workspaces"
     say "      herdr integration install opencode"
+    say "  - Reload systemd units after re-running this installer:"
+    say "      systemctl --user daemon-reload"
+    say "      systemctl --user restart opencode-server.service"
     say "  - Shell config loads from ~/.bashrc (no zsh needed)."
     say "  - Fill shell/shared/secrets.sh, then re-run install.sh (or run"
     say "      git update-index --skip-worktree shell/shared/secrets.sh)."
