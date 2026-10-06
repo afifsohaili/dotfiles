@@ -67,13 +67,15 @@ if [ "$DRY_RUN" -eq 1 ]; then
   say "dry-run: no changes will be made"
 fi
 
-# 1. ~/.config symlinks for repo-owned config trees.
+# 1. ~/.config symlinks for repo-owned config trees. The repo stores these under
+#    `config/<name>` (no leading dot); only the symlink target lives at
+#    `~/.config/<name>`.
 if [ ! -d "$HOME/.config" ]; then
   run mkdir -p "$HOME/.config"
 fi
 
 for name in opencode herdr nvim; do
-  src="$DOTFILES/.config/$name"
+  src="$DOTFILES/config/$name"
   dest="$HOME/.config/$name"
 
   if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then

@@ -107,9 +107,9 @@ does not need zsh at all.
 
 | Piece | Wiring |
 | --- | --- |
-| `~/.config/opencode` | symlink to `$DOTFILES/.config/opencode` |
-| `~/.config/herdr` | symlink to `$DOTFILES/.config/herdr` |
-| `~/.config/nvim` | symlink to `$DOTFILES/.config/nvim` |
+| `~/.config/opencode` | symlink to `$DOTFILES/config/opencode` |
+| `~/.config/herdr` | symlink to `$DOTFILES/config/herdr` |
+| `~/.config/nvim` | symlink to `$DOTFILES/config/nvim` |
 | shell | `shell/{shared,mac,linux,zsh}/`; login shell's rc (`~/.zshrc` or `~/.bashrc`) gains `# dotfiles` + `source "$HOME/Projects/dotfiles/init.{zsh,bash}"` |
 | secrets | template at `shell/shared/secrets.sh`; local edits marked with `git update-index --skip-worktree shell/shared/secrets.sh` |
 | herdr plugins | not in the repo; reinstall with the `herdr plugin install` commands above |
