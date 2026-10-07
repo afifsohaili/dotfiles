@@ -86,7 +86,7 @@ Do not touch `.env`, secrets, or unrelated files. Keep the smallest change that 
 The ntfy topic is not in the task environment. Load it from the user's env file, post the report, and do not print the topic value:
 
 ```
-set -a; . ~/.config/opencode/opencode.env; set +a
+set -a; . "$HOME/Projects/dotfiles/shell/shared/opencode.env"; set +a
 curl -s -d "<report body>" -H "Title: cntct.us SEO daily" -H "Priority: default" -H "Tags: mag" "https://ntfy.sh/$OPENCODE_NTFY_TOPIC"
 ```
 

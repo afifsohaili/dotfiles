@@ -13,7 +13,7 @@ permission:
 Say hi to the user via ntfy. Post a short friendly one-line greeting:
 
 ```
-set -a; . ~/.config/opencode/opencode.env; set +a
+set -a; . "$HOME/Projects/dotfiles/shell/shared/opencode.env"; set +a
 curl -s -d "Hi! Have a great day." -H "Title: Good morning" -H "Tags: wave" "https://ntfy.sh/$OPENCODE_NTFY_TOPIC"
 ```
 

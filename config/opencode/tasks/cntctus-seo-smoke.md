@@ -32,7 +32,7 @@ Do exactly this:
 3. Report the clicks / indexed / not-indexed numbers you can see, and whether the browser chain worked, via ntfy:
 
 ```
-set -a; . ~/.config/opencode/opencode.env; set +a
+set -a; . "$HOME/Projects/dotfiles/shell/shared/opencode.env"; set +a
 curl -s -d "<one-line summary>" -H "Title: cntct.us SEO smoke" -H "Tags: test_tube" "https://ntfy.sh/$OPENCODE_NTFY_TOPIC"
 ```
 
