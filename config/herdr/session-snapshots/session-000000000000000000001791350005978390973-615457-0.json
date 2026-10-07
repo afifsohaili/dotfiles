@@ -1,0 +1,231 @@
+{
+  "version": 3,
+  "workspaces": [
+    {
+      "id": "w1",
+      "custom_name": null,
+      "identity_cwd": "/home/afifsohaili/Projects/fcpofolio",
+      "public_pane_numbers": {
+        "4": 11,
+        "3": 9,
+        "1": 7,
+        "2": 10
+      },
+      "next_public_pane_number": 12,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 4,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Split": {
+              "direction": "Vertical",
+              "ratio": 0.5,
+              "first": {
+                "Split": {
+                  "direction": "Horizontal",
+                  "ratio": 0.5,
+                  "first": {
+                    "Pane": 1
+                  },
+                  "second": {
+                    "Pane": 2
+                  }
+                }
+              },
+              "second": {
+                "Split": {
+                  "direction": "Horizontal",
+                  "ratio": 0.5,
+                  "first": {
+                    "Pane": 3
+                  },
+                  "second": {
+                    "Pane": 4
+                  }
+                }
+              }
+            }
+          },
+          "panes": {
+            "2": {
+              "cwd": "/home/afifsohaili/Projects/fcpofolio"
+            },
+            "4": {
+              "cwd": "/home/afifsohaili/Projects/fcpofolio"
+            },
+            "1": {
+              "cwd": "/home/afifsohaili/Projects/fcpofolio"
+            },
+            "3": {
+              "cwd": "/home/afifsohaili/Projects/fcpofolio"
+            }
+          },
+          "zoomed": true,
+          "focused": 2,
+          "root_pane": 1
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w3",
+      "custom_name": null,
+      "identity_cwd": "/home/afifsohaili/Projects/leapmotor-mate",
+      "public_pane_numbers": {
+        "5": 1
+      },
+      "next_public_pane_number": 2,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 2,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Pane": 5
+          },
+          "panes": {
+            "5": {
+              "cwd": "/home/afifsohaili/Projects/leapmotor-mate"
+            }
+          },
+          "zoomed": false,
+          "focused": 5,
+          "root_pane": 5
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w4",
+      "custom_name": null,
+      "identity_cwd": "/home/afifsohaili/Projects/dotfiles",
+      "public_pane_numbers": {
+        "6": 1,
+        "7": 2,
+        "8": 5
+      },
+      "next_public_pane_number": 6,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 2,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Split": {
+              "direction": "Vertical",
+              "ratio": 0.5,
+              "first": {
+                "Pane": 6
+              },
+              "second": {
+                "Split": {
+                  "direction": "Horizontal",
+                  "ratio": 0.5,
+                  "first": {
+                    "Pane": 7
+                  },
+                  "second": {
+                    "Pane": 8
+                  }
+                }
+              }
+            }
+          },
+          "panes": {
+            "7": {
+              "cwd": "/home/afifsohaili/Projects/dotfiles"
+            },
+            "6": {
+              "cwd": "/home/afifsohaili/Projects/dotfiles",
+              "agent_session": {
+                "source": "herdr:opencode",
+                "agent": "opencode",
+                "kind": "id",
+                "value": "ses_eeb4a4836ffe0jMUudL2Z3HbON"
+              }
+            },
+            "8": {
+              "cwd": "/home/afifsohaili/Projects/dotfiles"
+            }
+          },
+          "zoomed": true,
+          "focused": 6,
+          "root_pane": 6
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w5",
+      "custom_name": null,
+      "identity_cwd": "/home/afifsohaili/Projects/opencodehub",
+      "public_pane_numbers": {
+        "9": 1
+      },
+      "next_public_pane_number": 2,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 2,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Pane": 9
+          },
+          "panes": {
+            "9": {
+              "cwd": "/home/afifsohaili/Projects/opencodehub"
+            }
+          },
+          "zoomed": false,
+          "focused": 9,
+          "root_pane": 9
+        }
+      ],
+      "active_tab": 0
+    },
+    {
+      "id": "w6",
+      "custom_name": null,
+      "identity_cwd": "/home/afifsohaili/Projects/cntctus",
+      "public_pane_numbers": {
+        "10": 1
+      },
+      "next_public_pane_number": 2,
+      "public_tab_numbers": [
+        1
+      ],
+      "next_public_tab_number": 2,
+      "tabs": [
+        {
+          "custom_name": null,
+          "layout": {
+            "Pane": 10
+          },
+          "panes": {
+            "10": {
+              "cwd": "/home/afifsohaili/Projects/cntctus"
+            }
+          },
+          "zoomed": false,
+          "focused": 10,
+          "root_pane": 10
+        }
+      ],
+      "active_tab": 0
+    }
+  ],
+  "active": 2,
+  "selected": 2,
+  "sidebar_width": null,
+  "sidebar_section_split": null,
+  "collapsed_space_keys": []
+}

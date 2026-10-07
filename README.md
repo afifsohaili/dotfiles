@@ -103,6 +103,19 @@ does not need zsh at all.
    configs` or `omarchy-nvim-refresh`, Omarchy may move the symlink aside;
    re-run `install.sh` to restore it.
 
+10. Mailpit (local email catcher, used by OpenCodeHub in dev), from the AUR:
+
+   ```
+   yay -S mailpit-bin
+   systemctl --user enable --now mailpit.service
+   ```
+
+   The repo ships `omarchy/systemd/mailpit.service`; `install.sh` links it.
+   It binds loopback only (`127.0.0.1:8025` UI/API, `127.0.0.1:1025` SMTP) and
+   keeps no database, so captured mail is dropped on restart. The AUR package
+   also installs a system-scope `/usr/lib/systemd/system/mailpit.service` that
+   binds `0.0.0.0`; leave it disabled.
+
 ## How it is wired
 
 | Piece | Wiring |
@@ -114,6 +127,7 @@ does not need zsh at all.
 | secrets | template at `shell/shared/secrets.sh`; local edits marked with `git update-index --skip-worktree shell/shared/secrets.sh` |
 | herdr plugins | not in the repo; reinstall with the `herdr plugin install` commands above |
 | nvim under Omarchy | repo config replaces `omarchy-nvim`; re-link after Omarchy updates |
+| mailpit | `yay -S mailpit-bin`; `omarchy/systemd/mailpit.service` linked to `~/.config/systemd/user/`, enabled manually with `systemctl --user enable --now mailpit.service` |
 
 ## OpenCode v2
 

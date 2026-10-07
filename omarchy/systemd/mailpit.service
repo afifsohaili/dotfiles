@@ -1,0 +1,16 @@
+[Unit]
+Description=Mailpit email testing server
+Documentation=https://mailpit.axllent.org/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Loopback only; Mailpit defaults to 0.0.0.0 on both listeners.
+# No -d: emails live in a temp DB that is deleted when the service stops.
+ExecStart=/usr/bin/mailpit --listen 127.0.0.1:8025 --smtp 127.0.0.1:1025
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

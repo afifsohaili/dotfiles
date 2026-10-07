@@ -77,7 +77,8 @@ case "$(uname -s)" in
     ;;
   Linux)
     alias reload='source ~/.bashrc'
-    [ -z "${EDITOR:-}" ] && alias vi="nvim" && alias vim="nvim"
+    alias vi="nvim"
+    alias vim="nvim"
     ;;
 esac
 
