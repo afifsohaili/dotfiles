@@ -3,8 +3,8 @@ description: Daily SEO/AEO check for cntct.us via Google Search Console, then on
 schedule: "16 21 * * *"
 cwd: ~/Projects/cntctus
 timeout: 55m
-model: ollama-cloud/glm-5.3
-agent: ollama-glm53f
+model: deepseek/deepseek-flash#max
+agent: ds-dsv4f
 session_name: cntctus-seo-daily
 permission:
   bash:

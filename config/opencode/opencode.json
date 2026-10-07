@@ -1,8 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": [
-    "opencode-tasks@latest"
-  ],
+  "plugins": [],
   "references": {
     "projects": {
       "path": "~/Projects",
@@ -46,6 +44,19 @@
     { "action": "external_directory", "resource": "/usr/share/omarchy/*", "effect": "allow" },
     { "action": "external_directory", "resource": "~/.local/share/omarchy/*", "effect": "allow" },
     { "action": "external_directory", "resource": "~/.config/systemd/user/*", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/opencode", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/mise", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/mise/*", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/herdr", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/omarchy", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/hypr", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/alacritty", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/foot", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/kitty", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/.config/ghostty", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/Projects", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/Projects/*", "effect": "allow" },
+    { "action": "external_directory", "resource": "~/Work", "effect": "allow" },
     { "action": "read", "resource": "*", "effect": "allow" },
     { "action": "read", "resource": "*.env", "effect": "deny" },
     { "action": "read", "resource": "*.env.*", "effect": "deny" },

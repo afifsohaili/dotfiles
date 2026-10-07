@@ -1,5 +1,4 @@
 node_modules
-package.json
 bun.lock
 service.json
 .tasks.db

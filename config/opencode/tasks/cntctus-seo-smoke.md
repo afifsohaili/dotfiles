@@ -3,8 +3,8 @@ description: One-shot smoke test for the cntctus-seo-daily task (report only, no
 schedule: "*/2 * * * *"
 cwd: ~/Projects/cntctus
 timeout: 12m
-model: ollama-cloud/glm-5.3
-agent: ollama-glm53f
+model: deepseek/deepseek-flash#max
+agent: ds-dsv4f
 session_name: cntctus-seo-smoke
 permission:
   bash:
