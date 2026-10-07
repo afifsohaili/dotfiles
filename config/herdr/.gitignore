@@ -1,6 +1,8 @@
 *.sock
+*.sock.agent
 *.log
 session.json
+session-snapshots/
 release-notes.json
 config.toml.bak
 plugins/
