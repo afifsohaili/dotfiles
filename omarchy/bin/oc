@@ -21,6 +21,33 @@ if [[ -z $DIR ]]; then
   fi
 fi
 
+# Resolve the v2 binary explicitly. The Omarchy menu and uwsm app launches
+# never source the login shell, so PATH may carry no opencode at all (mise
+# shims only resolve v1). Same order as the systemd unit: curl installer,
+# AUR, then a local override.
+OPENCODE_BIN=""
+for p in "$HOME/.opencode/bin/opencode" /usr/bin/opencode "$HOME/.local/bin/opencode"; do
+  if [[ -x $p ]]; then OPENCODE_BIN=$p; break; fi
+done
+if [[ -z $OPENCODE_BIN ]]; then
+  echo "error: opencode v2 not found; install it with:" >&2
+  echo "  curl -fsSL https://opencode.ai/v2/install | bash" >&2
+  echo "or the AUR package:" >&2
+  echo "  paru -S opencode-beta" >&2
+  exit 1
+fi
+
+# The shared password (and ntfy settings) live in the gitignored env file.
+# Login shells source it via shell/shared/opencode.sh; non-login launches
+# must load it here or the client cannot authenticate to the shared server.
+OPENCODE_ENV_FILE="${OPENCODE_ENV_FILE:-$HOME/Projects/dotfiles/shell/shared/opencode.env}"
+if [[ -r $OPENCODE_ENV_FILE ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$OPENCODE_ENV_FILE"
+  set +a
+fi
+
 listening() {
   ss -ltn "sport = :$PORT" 2>/dev/null | grep -q LISTEN
 }
@@ -29,7 +56,7 @@ if ! listening; then
   if systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
     systemctl --user start opencode-server.service
   else
-    setsid nohup opencode serve --port "$PORT" --hostname "$HOST" >/dev/null 2>&1 &
+    setsid nohup "$OPENCODE_BIN" serve --port "$PORT" --hostname "$HOST" >/dev/null 2>&1 &
   fi
 
   for _ in {1..60}; do
@@ -44,6 +71,6 @@ if ! listening; then
 fi
 
 # V2: `opencode attach` is gone. The client takes the directory positionally
-# and connects with --server. OPENCODE_PASSWORD is exported by
-# shell/shared/opencode.sh and matches the service's EnvironmentFile.
-exec opencode --server "http://127.0.0.1:$PORT" --continue "$DIR"
+# and connects with --server. OPENCODE_PASSWORD comes from the env file loaded
+# above and matches the service's EnvironmentFile.
+exec "$OPENCODE_BIN" --server "http://127.0.0.1:$PORT" --continue "$DIR"
