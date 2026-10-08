@@ -15,3 +15,7 @@ vim/sessions
 bin/subl
 tags
 shell/shared/opencode.env
+
+# Skills come from `npx skills` (repo `agents/skills` is canonical, symlinked to
+# ~/.agents/skills). Skill-local node_modules is dependency state, not content.
+agents/skills/**/node_modules/

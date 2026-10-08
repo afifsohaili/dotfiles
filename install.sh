@@ -98,6 +98,37 @@ for name in opencode herdr nvim; do
   run ln -s "$src" "$dest"
 done
 
+# 1b. ~/.agents links. This directory is the shared global skill store for many
+#     agents (~10 via `npx skills`), and it is NOT under ~/.config. The repo
+#     `agents/` slice is canonical; symlink the two paths `npx skills` manages
+#     (the `skills` tree and its lock) back into it. Anything else in ~/.agents
+#     stays untracked.
+if [ ! -d "$HOME/.agents" ]; then
+  run mkdir -p "$HOME/.agents"
+fi
+
+for rel in "skills" ".skill-lock.json"; do
+  src="$DOTFILES/agents/$rel"
+  dest="$HOME/.agents/$rel"
+
+  if [ ! -e "$src" ]; then
+    say "warn: $src does not exist; skipping $dest" >&2
+    continue
+  fi
+
+  if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
+    say "already linked: $dest -> $src"
+    continue
+  fi
+
+  if [ -e "$dest" ] || [ -L "$dest" ]; then
+    backup="$dest.pre-dotfiles-$(date +%Y%m%d-%H%M%S)"
+    run mv "$dest" "$backup"
+  fi
+
+  run ln -s "$src" "$dest"
+done
+
 # 2. Linux/Omarchy machine glue: omarchy/bin -> ~/.local/bin, and the systemd
 #    units -> ~/.config/systemd/user. Also restores links that
 #    `omarchy reinstall configs` may have moved aside.
