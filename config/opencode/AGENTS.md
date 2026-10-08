@@ -68,7 +68,7 @@ Consolidated from the former `SOUL.md` (working philosophy), `TECHNICAL.md` (sta
 
 - Commit only when explicitly requested. Default repo policy is NEVER COMMIT; phase-based tasks carry an explicit override. Never push unless asked.
 - Conventional commits: `type(scope): subject`. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `perf`, `chore`, `ci`.
-- Scope = `effort-number-phase`, e.g. `feat(015-04b):`. Module scopes: `feat(simulator):`, `fix(runboard):`, `feat(hub):`, `test(e2e):`, `ci(deploy):`.
+- Scope = module scopes: `feat(simulator):`, `fix(runboard):`, `feat(hub):`, `test(e2e):`, `ci(deploy):`.
 - One purpose per commit. Tests with the fix. Docs separate (`docs(...)`).
 - One phase = one conventional commit.
 - Stage only intended files. Never `git add -A`. Never commit secrets, `.env*`, `node_modules`, another agent's WIP files, `design.pen`, or review reports unless asked.
