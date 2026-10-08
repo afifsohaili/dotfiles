@@ -13,6 +13,9 @@
 6. Install oh my zsh
 7. Install opencode v2 (`curl -fsSL https://opencode.ai/v2/install | bash`) and
    herdr (`brew install herdr`), then `herdr integration install opencode`.
+   bun (`brew install oven-sh/bun/bun`) installs the opencode plugin
+   dependencies; run `cd ~/.config/opencode && bun install` (or let `install.sh`
+   do it) so the local plugins load.
 8. Load `source $HOME/Projects/dotfiles/init.zsh` to .zshrc
 
 `install.sh` automates steps 4-8 and links the repo-owned `~/.config` trees. It
@@ -128,6 +131,7 @@ does not need zsh at all.
 | shell | `shell/{shared,mac,linux,zsh}/`; login shell's rc (`~/.zshrc` or `~/.bashrc`) gains `# dotfiles` + `source "$HOME/Projects/dotfiles/init.{zsh,bash}"` |
 | secrets | template at `shell/shared/secrets.sh`; local edits marked with `git update-index --skip-worktree shell/shared/secrets.sh` |
 | herdr plugins | not in the repo; reinstall with the `herdr plugin install` commands above |
+| opencode plugin deps | `config/opencode/package.json` is tracked; `node_modules` is not. Run `bun install` in `~/.config/opencode` after a fresh clone or config-tree move; `install.sh` does it when needed |
 | nvim under Omarchy | repo config replaces `omarchy-nvim`; re-link after Omarchy updates |
 | mailpit | `yay -S mailpit-bin`; `omarchy/systemd/mailpit.service` linked to `~/.config/systemd/user/`, enabled manually with `systemctl --user enable --now mailpit.service` |
 
@@ -146,3 +150,13 @@ the systemd unit reads the same file. Clients (`oc`) connect with
 `herdr integration install opencode` writes files into `~/.config/opencode`
 (`plugins/`, `herdr-opencode/`, `cli.json` entry); those are gitignored. Reinstall
 it after a fresh clone.
+
+The local plugins under `config/opencode/plugins/` import bare packages at
+runtime (`@opencode/plugin`, `@opencode-ai/plugin`, `opencode-tasks`). Those are
+declared in the tracked `config/opencode/package.json`, but `node_modules` is
+gitignored, so each machine must run `bun install` in `~/.config/opencode` once.
+Without it, `history-search.ts` and `opencode-tasks-v2.ts` fail to load with
+`Cannot find package '@opencode/plugin'` and their tools never register.
+`install.sh` runs it automatically when `package.json` is newer than
+`node_modules`. After installing, restart the server (`opencode service restart`
+on macOS, `systemctl --user restart opencode-server.service` on Linux).

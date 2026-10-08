@@ -129,6 +129,31 @@ for rel in "skills" ".skill-lock.json"; do
   run ln -s "$src" "$dest"
 done
 
+# 1c. OpenCode plugin dependencies. `config/opencode/package.json` declares the
+#     packages the local plugins import at runtime (@opencode/plugin,
+#     @opencode-ai/plugin, opencode-tasks). `node_modules` is gitignored, so a
+#     fresh clone or a config-tree move leaves those imports unresolved and both
+#     `history-search.ts` and `opencode-tasks-v2.ts` fail to load with
+#     "Cannot find package '@opencode/plugin'". bun installs them here. Skipped
+#     once node_modules is newer than package.json.
+opencode_dir="$DOTFILES/config/opencode"
+if [ -f "$opencode_dir/package.json" ]; then
+  if [ -d "$opencode_dir/node_modules" ] &&
+     [ "$opencode_dir/node_modules" -nt "$opencode_dir/package.json" ]; then
+    say "opencode plugins: node_modules up to date"
+  elif ! command -v bun >/dev/null 2>&1; then
+    say "warn: bun not found; run 'cd \"$opencode_dir\" && bun install' so the opencode plugins load" >&2
+  elif [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] cd %q && bun install\n' "$opencode_dir"
+  else
+    if ( cd "$opencode_dir" && bun install ); then
+      say "opencode plugins: installed dependencies in $opencode_dir"
+    else
+      say "warn: bun install failed in $opencode_dir; opencode plugins will not load" >&2
+    fi
+  fi
+fi
+
 # 2. Linux/Omarchy machine glue: omarchy/bin -> ~/.local/bin, and the systemd
 #    units -> ~/.config/systemd/user. Also restores links that
 #    `omarchy reinstall configs` may have moved aside.
