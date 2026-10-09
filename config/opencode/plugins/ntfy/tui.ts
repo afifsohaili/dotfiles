@@ -13,8 +13,11 @@
 // `permission.asked`.
 //
 // Env (read from the TUI process environment):
-//   OPENCODE_NTFY_TOPIC  ntfy.sh topic to publish to. Unset => ntfy is skipped.
-//   OPENCODE_NTFY_URL    OpenCode server URL, used for the notification click-through.
+//   OPENCODE_NTFY_TOPIC   ntfy topic to publish to. Unset => ntfy is skipped.
+//   OPENCODE_NTFY_SERVER  ntfy base URL. Defaults to https://ntfy.sh; set to a
+//                         self-hosted server (e.g. http://host:15002).
+//   OPENCODE_NTFY_TOKEN   Optional bearer token for a server with auth enabled.
+//   OPENCODE_NTFY_URL     OpenCode server URL, used for the notification click-through.
 //
 // Desktop notifications and sounds go through the native `attention` API, which
 // only fires while the terminal is blurred. ntfy always fires.
@@ -22,7 +25,17 @@
 import { Plugin } from "@opencode/plugin/tui"
 
 const NTFY_TOPIC = process.env.OPENCODE_NTFY_TOPIC
-const NTFY_SERVER_URL = process.env.OPENCODE_NTFY_URL ?? "http://127.0.0.1:15001"
+// Defaults to the public ntfy.sh. Point OPENCODE_NTFY_SERVER at a self-hosted
+// server to keep notification bodies off a third party.
+const NTFY_SERVER = (process.env.OPENCODE_NTFY_SERVER ?? "https://ntfy.sh").replace(/\/+$/, "")
+const NTFY_TOKEN = process.env.OPENCODE_NTFY_TOKEN
+// Trailing slashes are stripped to match the web app's own URL normalization
+// (`(url).replace(/\/+$/, "")`), so the deep link encodes the exact string the
+// client stores for the server.
+const NTFY_SERVER_URL = (process.env.OPENCODE_NTFY_URL ?? "http://127.0.0.1:15001").replace(/\/+$/, "")
+// V2 web sessions live at /server/<base64url(server URL)>/session/<id>. The v1
+// /session/<id> path no longer exists and rendered the web app's 404 page.
+const NTFY_SERVER_KEY = Buffer.from(NTFY_SERVER_URL).toString("base64url")
 
 // Dedupe window per request id. A hot reload can replay the same event.
 const DEDUPE_MS = 3_000
@@ -36,10 +49,11 @@ async function sendNtfy(input: {
 }): Promise<void> {
   if (!NTFY_TOPIC) return
   try {
-    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+    await fetch(`${NTFY_SERVER}/${NTFY_TOPIC}`, {
       method: "POST",
       body: input.body,
       headers: {
+        ...(NTFY_TOKEN ? { Authorization: `Bearer ${NTFY_TOKEN}` } : {}),
         Title: input.title,
         ...(input.priority ? { Priority: input.priority } : {}),
         ...(input.tags ? { Tags: input.tags } : {}),
@@ -83,7 +97,9 @@ export default Plugin.define({
         body: input.message,
         priority: input.priority,
         tags: input.tags,
-        ...(input.sessionID ? { click: `${NTFY_SERVER_URL}/session/${input.sessionID}` } : {}),
+        ...(input.sessionID
+          ? { click: `${NTFY_SERVER_URL}/server/${NTFY_SERVER_KEY}/session/${input.sessionID}` }
+          : {}),
       })
     }
 

@@ -1,0 +1,19 @@
+[Unit]
+Description=ntfy server (self-hosted, tailnet only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# AUR package: ntfysh-bin (the binary is /usr/bin/ntfy). Do NOT install AUR
+# `ntfy`; that package is a different project (dschep/ntfy).
+# The first start creates user.db and cache.db. Then `ntfy user add` /
+# `ntfy access` / `ntfy token add` work via shell/linux/ntfy.sh, which exports
+# NTFY_AUTH_FILE. Auth is deny-all until an ACL grants access.
+ExecStartPre=/usr/bin/mkdir -p %h/.local/share/ntfy
+ExecStart=/usr/bin/ntfy serve --config %h/Projects/dotfiles/config/ntfy/server.yml --cache-file %h/.local/share/ntfy/cache.db --auth-file %h/.local/share/ntfy/user.db
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

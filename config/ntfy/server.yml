@@ -1,0 +1,19 @@
+# Self-hosted ntfy for the OpenCode TUI plugin (config/opencode/plugins/ntfy).
+#
+# Tailnet only: binds loopback, exposed with
+#   tailscale serve --bg --http=15002 http://127.0.0.1:15002
+# Auth is required for every topic. Create a user and token after first start:
+#   ntfy user add afif          # prompts for a password
+#   ntfy access afif afif-opencode rw
+#   ntfy token add afif         # copy into OPENCODE_NTFY_TOKEN
+#
+# Secrets (user.db, tokens) live in ~/.local/share/ntfy and are not tracked.
+#
+# Android only: the app connects straight to this server, so no Firebase and no
+# upstream server are involved. Add `upstream-base-url: "https://ntfy.sh"` if an
+# iPhone ever subscribes (iOS needs APNs; only message IDs would leave the box).
+
+listen-http: "127.0.0.1:15002"
+
+# Every topic needs auth; grant access per user with `ntfy access`.
+auth-default-access: "deny-all"
