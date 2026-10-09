@@ -64,6 +64,9 @@
     { "action": "read", "resource": "*.env.playwright", "effect": "allow" },
     { "action": "read", "resource": "*.env.example", "effect": "allow" },
     { "action": "read", "resource": ".env", "effect": "deny" },
+    { "action": "read", "resource": "*secrets.sh", "effect": "deny" },
+    { "action": "read", "resource": "*opencode.env", "effect": "deny" },
+    { "action": "read", "resource": "*opencode/secrets/*", "effect": "deny" },
     { "action": "shell", "resource": "rm *", "effect": "ask" },
     { "action": "shell", "resource": "rm ./*", "effect": "allow" },
     { "action": "shell", "resource": "rm /Users/afifsohaili/Tiga/*", "effect": "allow" },
@@ -76,6 +79,15 @@
     { "action": "shell", "resource": "sudo *", "effect": "ask" },
     { "action": "shell", "resource": "pkexec *", "effect": "ask" }
   ],
+  "experimental": {
+    "policies": [
+      { "action": "permission", "resource": "read:*secrets.sh", "effect": "deny" },
+      { "action": "permission", "resource": "read:*opencode.env", "effect": "deny" },
+      { "action": "permission", "resource": "read:*opencode/secrets/*", "effect": "deny" },
+      { "action": "permission", "resource": "shell:*secrets.sh*", "effect": "deny" },
+      { "action": "permission", "resource": "shell:*opencode.env*", "effect": "deny" }
+    ]
+  },
   "mcp": {
     "servers": {
       "websearch": {
