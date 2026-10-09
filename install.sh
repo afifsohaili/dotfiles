@@ -269,6 +269,26 @@ if [ "$(uname -s)" = "Linux" ]; then
       run omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
     fi
   fi
+  # Expose the loopback shared server to the tailnet (idempotent). HTTPS certs
+  # are only issued on 443/8443/10000, so use plain HTTP on 15001; the tailnet
+  # transport is already WireGuard-encrypted. The ntfy server, once installed,
+  # is exposed the same way on 15002.
+  if command -v tailscale >/dev/null 2>&1; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] tailscale serve --bg --http=15001 http://127.0.0.1:15001\n'
+    else
+      tailscale serve --bg --http=15001 http://127.0.0.1:15001 >/dev/null 2>&1 || \
+        say "warn: could not configure tailscale serve for :15001"
+    fi
+    if command -v ntfy >/dev/null 2>&1; then
+      if [ "$DRY_RUN" -eq 1 ]; then
+        printf '[dry-run] tailscale serve --bg --http=15002 http://127.0.0.1:15002\n'
+      else
+        tailscale serve --bg --http=15002 http://127.0.0.1:15002 >/dev/null 2>&1 || \
+          say "warn: could not configure tailscale serve for :15002"
+      fi
+    fi
+  fi
 else
   say "machine glue: skipped (not Linux)"
 fi
@@ -292,15 +312,16 @@ else
   printf '  %s\n' "# dotfiles" "$SHIM_LINE"
 fi
 
-# 4. Keep machine-local secrets out of git status once they have local edits.
-if GIT_OPTIONAL_LOCKS=0 git -C "$DOTFILES" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  if GIT_OPTIONAL_LOCKS=0 git -C "$DOTFILES" diff --quiet -- "$SECRETS_PATH"; then
-    say "skip-worktree: no local changes in $SECRETS_PATH, nothing to do"
-  else
-    run git -C "$DOTFILES" update-index --skip-worktree -- "$SECRETS_PATH"
-  fi
+# 4. Machine-local secrets. secrets.sh is gitignored; create it from the tracked
+#    example on first run and keep the file mode 0600.
+if [ -e "$DOTFILES/$SECRETS_PATH" ]; then
+  say "secrets: $SECRETS_PATH present"
 else
-  say "skip-worktree: not a git repo, skipping"
+  run cp "$DOTFILES/shell/shared/secrets.example" "$DOTFILES/$SECRETS_PATH"
+  say "secrets: created $SECRETS_PATH from secrets.example; fill it in"
+fi
+if [ -e "$DOTFILES/$SECRETS_PATH" ]; then
+  run chmod 600 "$DOTFILES/$SECRETS_PATH"
 fi
 
 # 4b. Shared opencode server password. V2 servers require one; the login shell
@@ -316,6 +337,9 @@ else
   ( umask 077; printf 'OPENCODE_PASSWORD=%s\n' "$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >> "$OPENCODE_ENV" )
   say "opencode: generated OPENCODE_PASSWORD in $OPENCODE_ENV"
 fi
+if [ -e "$OPENCODE_ENV" ]; then
+  run chmod 600 "$OPENCODE_ENV"
+fi
 
 # 5. Next steps, per OS.
 say ""
@@ -326,7 +350,7 @@ case "$(uname -s)" in
     say "  - Tools (herdr, neovim) come from Homebrew:"
     say "      brew bundle install --file \"$DOTFILES/Brewfile\""
     say "  - opencode v2 (curl installer replaces the v1 ~/.opencode/bin binary):"
-    say "      curl -fsSL https://opencode.ai/v2/install | bash"
+    say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
     say "  - Reload your shell: source ~/.zshrc"
     ;;
   Linux)
@@ -336,14 +360,29 @@ case "$(uname -s)" in
     say "  - Go via mise (mise ships with Omarchy):"
     say "      mise use -g go@latest"
     say "  - herdr:"
-    say "      curl -fsSL $HERDR_INSTALL_URL | sh"
+    say "      curl --proto '=https' --tlsv1.2 -fsSL $HERDR_INSTALL_URL | sh"
     say "  - opencode v2. NOT via mise: the mise/aqua registry only tracks v1."
     say "    Either the AUR package (native, /usr/bin/opencode):"
-    say "      paru -S opencode-beta"
+    say "      yay -S opencode-beta"
     say "    or the curl installer (~/.opencode/bin/opencode):"
-    say "      curl -fsSL https://opencode.ai/v2/install | bash"
+    say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
     say "    If v1 was mise-managed, drop it so the v2 binary wins:"
     say "      mise uninstall opencode"
+    say "  - Tailnet access to the shared server (loopback bind + tailscale serve,"
+    say "    configured above by install.sh):"
+    say "      tailscale serve --bg --http=15001 http://127.0.0.1:15001"
+    say "  - Self-hosted ntfy (tailnet only; bodies stay on this machine)."
+    say "    Install ntfysh-bin, NOT ntfy (AUR 'ntfy' is a different project):"
+    say "      yay -S ntfysh-bin"
+    say "      systemctl --user disable --now ntfy-client.service  # preset-enabled, no config"
+    say "      systemctl --user enable --now ntfy.service          # first start creates user.db"
+    say "      source ~/.bashrc   # shell/linux/ntfy.sh exports NTFY_AUTH_FILE"
+    say "      ntfy user add afif"
+    say "      ntfy access afif afif-opencode rw"
+    say "      ntfy token add afif   # add to OPENCODE_NTFY_TOKEN in shell/shared/opencode.env"
+    say "      # then in shell/shared/opencode.env:"
+    say "      #   OPENCODE_NTFY_TOPIC=afif-opencode"
+    say "      #   OPENCODE_NTFY_SERVER=http://<this-host>:15002"
     say "  - herdr plugins and integration:"
     say "      herdr plugin install crierr/herdr-arrange"
     say "      herdr plugin install abrose/herdr-numbered-workspaces"
@@ -355,8 +394,7 @@ case "$(uname -s)" in
     say "      systemctl --user enable --now mailpit.service"
     say "    (loopback-only 127.0.0.1:8025 UI/API, :1025 SMTP; no persistent database)"
     say "  - Shell config loads from ~/.bashrc (no zsh needed)."
-    say "  - Fill shell/shared/secrets.sh, then re-run install.sh (or run"
-    say "      git update-index --skip-worktree shell/shared/secrets.sh)."
+    say "  - Fill shell/shared/secrets.sh (created from secrets.example above)."
     say "  - After 'omarchy reinstall configs' or 'omarchy-nvim-refresh', symlinks may be"
     say "    moved aside. Re-run install.sh to restore them."
     ;;
