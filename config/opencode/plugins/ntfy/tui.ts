@@ -1,11 +1,18 @@
 // ntfy + desktop notifications for OpenCode v2.
 //
 // V1 had this as a server plugin (`plugin/notify.ts`). V2 plugin implementations
-// changed shape, and the server plugin API has no session.idle / permission.asked
-// stream, so this is a CLI (TUI) plugin instead: OpenCode discovers it from
+// changed shape, and the server plugin API has no execution lifecycle stream,
+// so this is a CLI (TUI) plugin instead: OpenCode discovers it from
 // `<global-config>/plugins/<name>/tui.ts` and runs it in the terminal process.
 // That also means `fetch` and `process.env` work here, unlike the sandboxed
 // server plugin context.
+//
+// V2 emits `session.execution.succeeded` when a turn settles. `session.idle`
+// is a legacy event no V2 server publishes — core maps execution outcomes to
+// idle markers internally — so completion notifications listen on the
+// execution events. Subagent sessions settle too and are notified like any
+// other session. `session.execution.failed` notifies with the error message;
+// `session.execution.interrupted` (user cancel, shutdown) stays silent.
 //
 // Events differ from V2's docs in one important way: the question tool does not
 // emit `question.asked`. It creates a form (`form.created`) whose
@@ -26,6 +33,7 @@
 // Desktop notifications and sounds go through the native `attention` API, which
 // only fires while the terminal is blurred. ntfy always fires.
 
+import path from "node:path"
 import { Plugin } from "@opencode/plugin/tui"
 
 const NTFY_TOPIC = process.env.OPENCODE_NTFY_TOPIC
@@ -82,12 +90,22 @@ export default Plugin.define({
       return fn()
     }
 
+    // Titles stay ASCII because HTTP header values reject non-ASCII; ntfy
+    // renders the ⚠️/✔️ prefix from the warning/white_check_mark tags instead.
+    const projectName = (sessionID: string | undefined, fallbackDirectory?: string): string => {
+      const session = sessionID ? context.data.session.get(sessionID) : undefined
+      const project = session?.projectID ? context.data.project.get(session.projectID) : undefined
+      const canonical = project?.canonical || fallbackDirectory || context.location?.directory
+      const name = project?.name || (canonical ? path.basename(canonical) : "") || "opencode"
+      return name.toLowerCase()
+    }
+
     const alert = async (input: {
       title: string
       message: string
-      sound: "question" | "permission" | "done"
+      sound: "question" | "permission" | "done" | "error"
       priority: string
-      tags: string
+      tags?: string
       sessionID?: string
     }) => {
       await context.attention.notify({
@@ -100,23 +118,48 @@ export default Plugin.define({
         title: input.title,
         body: input.message,
         priority: input.priority,
-        tags: input.tags,
+        ...(input.tags ? { tags: input.tags } : {}),
         ...(NTFY_SERVER_URL && input.sessionID
           ? { click: `${NTFY_SERVER_URL}/server/${NTFY_SERVER_KEY}/session/${input.sessionID}` }
           : {}),
       })
     }
 
-    const stopIdle = context.data.on("session.idle", (event) => {
+    // A new execution clears the previous turn's settled keys, so back-to-back
+    // turns each notify even when they settle inside the dedupe window.
+    const stopStarted = context.data.on("session.execution.started", (event) => {
       const sessionID = event.data?.sessionID
       if (!sessionID) return
-      void once(`idle-${sessionID}`, () =>
+      notified.delete(`done-${sessionID}`)
+      notified.delete(`fail-${sessionID}`)
+    })
+
+    const stopSucceeded = context.data.on("session.execution.succeeded", (event) => {
+      const sessionID = event.data?.sessionID
+      if (!sessionID) return
+      void once(`done-${sessionID}`, () =>
         alert({
           title: "Opencode",
-          message: "Your task has been completed.",
+          message: `Your task in ${projectName(sessionID, event.location?.directory)} has been completed`,
           sound: "done",
           priority: "default",
           tags: "white_check_mark",
+          sessionID,
+        }),
+      )
+    })
+
+    const stopFailed = context.data.on("session.execution.failed", (event) => {
+      const sessionID = event.data?.sessionID
+      if (!sessionID) return
+      const error = event.data?.error?.message
+      void once(`fail-${sessionID}`, () =>
+        alert({
+          title: "Opencode",
+          message: `Your task in ${projectName(sessionID, event.location?.directory)} has failed: ${error ?? "unknown error"}`,
+          sound: "error",
+          priority: "high",
+          tags: "warning",
           sessionID,
         }),
       )
@@ -132,7 +175,7 @@ export default Plugin.define({
         : "Waiting for your approval"
       void once(key, () =>
         alert({
-          title: "Permission needed in OpenCode",
+          title: `Permission needed in ${projectName(data?.sessionID, event.location?.directory)}`,
           message: detail,
           sound: "permission",
           priority: "high",
@@ -152,8 +195,8 @@ export default Plugin.define({
       const key = `question-${form.id ?? form.sessionID ?? "unknown"}`
       void once(key, () =>
         alert({
-          title: "Question from OpenCode",
-          message: form.title ?? "Waiting for your input",
+          title: `Question from ${projectName(form.sessionID, event.location?.directory)}`,
+          message: "Waiting for your input",
           sound: "question",
           priority: "high",
           tags: "warning",
@@ -163,7 +206,9 @@ export default Plugin.define({
     })
 
     return () => {
-      stopIdle()
+      stopStarted()
+      stopSucceeded()
+      stopFailed()
       stopPermission()
       stopForm()
       notified.clear()
