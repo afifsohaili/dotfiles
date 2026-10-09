@@ -4,7 +4,8 @@
 # starting it first if it is not already running.
 
 PORT=15001
-HOST=0.0.0.0
+# Loopback only. Remote tailnet access is provided by `tailscale serve`.
+HOST=127.0.0.1
 
 # Target directory precedence:
 #   1. an explicit argument,

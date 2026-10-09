@@ -19,3 +19,14 @@ if [[ -z "${OPENCODE_PASSWORD:-}" ]]; then
   export OPENCODE_PASSWORD="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
   ( umask 077; printf 'OPENCODE_PASSWORD=%s\n' "$OPENCODE_PASSWORD" >> "$OPENCODE_ENV_FILE" )
 fi
+
+# Default URL for the shared server over the tailnet. Derived at runtime so no
+# MagicDNS hostname is committed to the public repo. Falls back to loopback.
+_opencode_tailnet_url() {
+  local dns=""
+  if command -v tailscale >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    dns="$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' 2>/dev/null)"
+    dns="${dns%.}"
+  fi
+  if [[ -n "$dns" ]]; then printf 'http://%s:15001' "$dns"; else printf 'http://127.0.0.1:15001'; fi
+}

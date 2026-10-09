@@ -12,7 +12,9 @@ EnvironmentFile=-%h/Projects/dotfiles/shell/shared/opencode.env
 # this must not use a mise shim. Resolve the first opencode v2 binary present:
 # AUR `opencode-beta` installs /usr/bin/opencode; the curl installer writes
 # ~/.opencode/bin/opencode. No PATH dependency.
-ExecStart=/bin/sh -c 'for p in "$HOME/.opencode/bin/opencode" /usr/bin/opencode "$HOME/.local/bin/opencode"; do [ -x "$p" ] && exec "$p" serve --port 15001 --hostname 0.0.0.0; done; echo "opencode v2 not found; install with the curl installer or AUR opencode-beta" >&2; exit 1'
+# Loopback only. Remote access goes through `tailscale serve` (see install.sh);
+# never bind 0.0.0.0, which exposes the shell-capable server to the LAN.
+ExecStart=/bin/sh -c 'for p in "$HOME/.opencode/bin/opencode" /usr/bin/opencode "$HOME/.local/bin/opencode"; do [ -x "$p" ] && exec "$p" serve --port 15001 --hostname 127.0.0.1; done; echo "opencode v2 not found; install with the curl installer or AUR opencode-beta" >&2; exit 1'
 Restart=on-failure
 RestartSec=2
 

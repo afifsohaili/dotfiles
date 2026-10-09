@@ -27,7 +27,8 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
       session_arg=(--continue)
     fi
     if ! lsof -i:15001 >/dev/null 2>&1; then
-      opencode serve --port 15001 --hostname 0.0.0.0 &
+      # Loopback only; expose to the tailnet with `tailscale serve`.
+      opencode serve --port 15001 --hostname 127.0.0.1 &
       local i=0
       while ! lsof -i:15001 >/dev/null 2>&1 && [ $i -lt 30 ]; do
         sleep 0.5
