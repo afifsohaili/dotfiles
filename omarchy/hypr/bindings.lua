@@ -40,3 +40,9 @@ o.bind("SUPER + SHIFT + G", "Gmail", { webapp = "https://mail.google.com/", focu
 
 -- Screenshot on ALT+SHIFT+4 (same smart flow as PRINT).
 o.bind("ALT + SHIFT + 4", "Screenshot", "omarchy-capture-screenshot")
+
+-- Leapmotor lock/unlock. Both ask for confirmation (omarchy-leapmotor-confirm
+-- shows a Cancel-first menu) and announce the result as a notification.
+-- SUPER SHIFT L/U were verified free in the live compositor before binding.
+o.bind("SUPER + SHIFT + L", "Lock Leapmotor", "omarchy-leapmotor-confirm lock")
+o.bind("SUPER + SHIFT + U", "Unlock Leapmotor", "omarchy-leapmotor-confirm unlock")

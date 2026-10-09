@@ -4,26 +4,31 @@
 # omarchy:args=[--force] [--limits-only]
 # omarchy:hidden=true
 #
-# Reads Ollama Cloud quota from the undocumented endpoint the dashboard
-# itself calls: GET https://ollama.com/api/usage with a Bearer API key.
-# The response carries `limits.<window>.usage` as a 0..1 fraction of the
-# plan allowance, plus per-model request counts. There are no exact reset
-# timestamps, so `resetsAt` stays empty rather than guessed.
+# Ollama replaced the percent quota windows that GET /api/usage used to
+# return (`limits.<window>.usage`) with metered usage over 24h, 7d, or 30d:
+# `usage_usd`, `request_count`, and token totals per bucket. No
+# key-accessible endpoint reports the old session/weekly percentages anymore,
+# so the record charts tokens per day from the 7d range and rides the dollar
+# figure on the status line the panel shows under the tool name.
 #
 # Output is one display-ready record matching the contract in
 # omarchy-agent-usage-update, so the omarchy.agents panel picks it up as a
 # tab. The record is also cached: a failed probe re-emits the last good one
-# so the panel does not blink empty on a transient network error.
+# so the panel does not blink empty on a transient network error. The stats
+# are account-global — the API reports the whole account, not this machine —
+# so the record declares scope "account" and sync merges take the widest
+# value instead of summing the same account twice.
 #
 # Key resolution: OLLAMA_API_KEY first, then the file opencode already uses
 # at ~/.local/share/opencode/secrets/ollama_api_key.
 
 set -euo pipefail
 
-ENDPOINT="https://ollama.com/api/usage"
+ENDPOINT="https://ollama.com/api/usage?range=7d"
 AGENT_ID="ollama"
 AGENT_NAME="Ollama Cloud"
 AUTH_HELP="Set OLLAMA_API_KEY or write the key to ~/.local/share/opencode/secrets/ollama_api_key."
+USAGE_HELP="Ollama bills usage in dollars now; the API no longer reports percent limits. Figures from ollama.com/api/usage."
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/omarchy/agent-usage"
 CACHE_FILE="$CACHE_DIR/ollama.json"
@@ -49,71 +54,42 @@ resolve_key() {
   return 1
 }
 
-# Human window title from the API's key: session -> Session (5-hour), etc.
-# The panel also derives a title from the label, but naming the window here
-# keeps a monthly plan from rendering as a generic "Limit".
-window_title() {
-  case "${1,,}" in
-    session) echo "Session (5-hour)" ;;
-    weekly) echo "Weekly (7-day)" ;;
-    monthly) echo "Monthly" ;;
-    daily) echo "Daily" ;;
-    *) echo "${1^}" ;;
-  esac
-}
-
-# The API reports usage as a 0..1 fraction. A value above 1 means the payload
-# switched to a percent scale, so divide it down.
-normalize_percent() {
-  jq -n --argjson v "$1" '
-    if $v == null then empty
-    elif ($v | type) != "number" then empty
-    elif $v > 1 then (($v / 100) | if . > 1 then 1 else . end)
-    else ($v | if . < 0 then 0 else . end)
-    end'
+# The last 7 local dates, oldest first — the panel's "tokens by day" rows.
+# Bucket dates are UTC; for the +08 machines these sync between, a UTC date
+# is already the right local day, so the date prefix is compared as-is.
+recent_dates() {
+  local i
+  for (( i = 6; i >= 0; i-- )); do
+    date -d "today - $i days" +%F
+  done
 }
 
 build_record() {
   local payload="$1" updated_at="$2"
-  local limits_json="[]"
+  local days_json usd requests usage_text
+  days_json="$(recent_dates | jq -Rsc 'split("\n")[:-1]')"
+  usd="$(jq -r '.totals.usage_usd // 0' <<<"$payload")"
+  requests="$(jq -r '.totals.request_count // 0' <<<"$payload")"
+  usage_text="$(awk -v u="$usd" -v r="$requests" 'BEGIN { printf "$%.2f · %d requests (7d)", u, r }')"
 
-  # One entry per window the account returns. usage -> percent (0..1).
-  while IFS= read -r key; do
-    [[ -n $key ]] || continue
-    local raw title percent
-    raw="$(jq -r --arg k "$key" '.limits[$k].usage // empty' <<<"$payload")"
-    [[ -n $raw ]] || continue
-    percent="$(normalize_percent "$raw")" || continue
-    [[ -n $percent ]] || continue
-    title="$(window_title "$key")"
-    limits_json="$(jq -c \
-      --arg label "$title" \
-      --argjson percent "$percent" \
-      '. + [{label: $label, title: $label, percent: $percent, resetsAt: ""}]' <<<"$limits_json")"
-  done < <(jq -r '(.limits // {}) | keys[]' <<<"$payload")
-
-  # Request counts across windows, summed per model. These are requests, not
-  # tokens, so they ride along as an extra field rather than faking the
-  # token buckets the panel charts.
-  local requests_json
-  requests_json="$(jq -c '
-    [ (.limits // {}) | to_entries[] | (.value.models // [])[] ]
-    | group_by(.name)
-    | map({key: .[0].name, value: (map(.request_count // 0) | add)})
-    | from_entries' <<<"$payload")"
-
-  local total_requests
-  total_requests="$(jq '[.[]] | add // 0' <<<"$requests_json")"
-
-  jq -nc \
+  jq -c \
     --arg id "$AGENT_ID" \
     --arg name "$AGENT_NAME" \
     --arg updated_at "$updated_at" \
-    --arg auth_help "$AUTH_HELP" \
-    --argjson limits "$limits_json" \
-    --argjson requests "$requests_json" \
-    --argjson total_requests "$total_requests" \
-    '{
+    --arg auth_help "$USAGE_HELP" \
+    --arg usage_text "$usage_text" \
+    --argjson days "$days_json" \
+    '
+    def bucket_date: (.from // "")[0:10];
+    def tokens: ((.input_tokens // 0) + (.output_tokens // 0));
+    . as $root |
+    ($root.buckets // []) as $buckets |
+    [ $days[] as $d |
+      { date: $d,
+        messageCount: ([$buckets[] | select(bucket_date == $d) | tokens] | add // 0) }
+    ] as $recent |
+    ($recent | map(select(.messageCount > 0)) | map(.date)) as $active |
+    {
       schemaVersion: 1,
       id: $id,
       name: $name,
@@ -121,22 +97,22 @@ build_record() {
       ready: true,
       hasLocalStats: false,
       hasPromptStats: false,
+      scope: "account",
       todayPrompts: 0,
       todaySessions: 0,
-      todayTotalTokens: 0,
+      todayTotalTokens: ($recent | last | .messageCount // 0),
       todayTokensByModel: {},
-      recentDays: [],
-      totalPrompts: 0,
+      recentDays: $recent,
+      totalPrompts: (($root.totals.request_count) // 0),
       totalSessions: 0,
-      activeDays: 0,
-      activeDates: [],
+      activeDays: ($active | length),
+      activeDates: $active,
       modelUsage: {},
-      limits: $limits,
+      limits: [],
       tierLabel: "",
-      usageStatusText: (if $total_requests > 0 then ($total_requests | tostring) + " requests this period" else "" end),
-      authHelpText: $auth_help,
-      requestCountsByModel: $requests
-    }'
+      usageStatusText: $usage_text,
+      authHelpText: $auth_help
+    }' <<<"$payload"
 }
 
 emit_cached() {
@@ -146,9 +122,10 @@ emit_cached() {
     jq -nc \
       --arg id "$AGENT_ID" --arg name "$AGENT_NAME" --arg auth_help "$AUTH_HELP" \
       '{schemaVersion:1,id:$id,name:$name,updatedAt:"",ready:false,hasLocalStats:false,
-        hasPromptStats:false,todayPrompts:0,todaySessions:0,todayTotalTokens:0,
+        hasPromptStats:false,scope:"account",todayPrompts:0,todaySessions:0,todayTotalTokens:0,
         todayTokensByModel:{},recentDays:[],totalPrompts:0,totalSessions:0,activeDays:0,
-        activeDates:[],modelUsage:{},limits:[],tierLabel:"",usageStatusText:"",
+        activeDates:[],modelUsage:{},limits:[],tierLabel:"",
+        usageStatusText:"Ollama usage unavailable",
         authHelpText:$auth_help}'
   fi
 }
