@@ -71,9 +71,7 @@
 [init]
   templatedir = ~/.git-templates
   defaultBranch = main
-[user]
-	name = Afif Sohaili
-	email = afifnajib@gmail.com
+# Machine-local identity lives in .gitconfig.user (untracked, included above).
 [rebase]
 	instructionFormat = (%an <%ae>) %s
 
