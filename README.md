@@ -148,7 +148,13 @@ does not need zsh at all.
    OPENCODE_NTFY_TOPIC=afif-opencode
    OPENCODE_NTFY_SERVER=http://<this-host>:15002
    OPENCODE_NTFY_TOKEN=<token from `ntfy token add`>
+   OPENCODE_NTFY_URL=http://<this-machine>.<tailnet>.ts.net:15001
    ```
+
+   `OPENCODE_NTFY_URL` is the click-through target, set per machine: it must be
+   reachable from whatever taps the notification (the phone). Use this machine's
+   tailnet MagicDNS URL, never another machine's. Unset => notifications carry
+   no click action.
 
    Leaving `OPENCODE_NTFY_SERVER` unset falls back to the public `https://ntfy.sh`.
 
