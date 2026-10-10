@@ -11,7 +11,7 @@
     "session.first": "<leader>1",
     "session.last": "<leader>9",
     "session.pin.toggle": "none",
-    "session.background": "none",
+    "session.background": "ctrl+g",
     "session.quick_switch.1": "none",
     "session.quick_switch.6": "none",
     "session.quick_switch.9": "none",
