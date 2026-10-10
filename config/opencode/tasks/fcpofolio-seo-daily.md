@@ -104,13 +104,14 @@ Follow `~/Projects/fcpofolio/AGENTS.md`, the global contract at `~/Projects/dotf
 
 ## Step 5 — Report
 
-End with a concise session summary (≤15 lines): GSC numbers (or the exact failure), the task and why, files changed, commit sha, push status. If `OPENCODE_NTFY_TOPIC` is already set in the environment, also post the same summary:
+End with a concise session summary (≤15 lines): GSC numbers (or the exact failure), the task and why, files changed, commit sha, push status. Then post the same summary:
 
 ```
-curl -s -d "<summary>" -H "Title: fcpofolio.com SEO daily" -H "Tags: mag" "https://ntfy.sh/$OPENCODE_NTFY_TOPIC"
+set -a; . "$HOME/Projects/dotfiles/shell/shared/opencode.env"; set +a
+curl -s -H "Authorization: Bearer $OPENCODE_NTFY_TOKEN" -d "<summary>" -H "Title: fcpofolio.com SEO daily" -H "Tags: mag" "${OPENCODE_NTFY_SERVER:-https://ntfy.sh}/$OPENCODE_NTFY_TOPIC"
 ```
 
-Never print the topic value; if the variable is not already set, skip the notification (never read env files to find it).
+Never print the topic or token value.
 
 ## Known site facts (verified 2026-10-09 — may be stale, re-check)
 
