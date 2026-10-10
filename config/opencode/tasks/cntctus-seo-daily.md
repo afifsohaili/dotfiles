@@ -83,11 +83,11 @@ Do not touch `.env`, secrets, or unrelated files. Keep the smallest change that 
 
 ## Step 4 — Report via ntfy
 
-The ntfy topic is not in the task environment. Load it from the user's env file, post the report, and do not print the topic value:
+The ntfy server and topic are not in the task environment. Load them from the user's env file, post the report, and do not print the topic or token value:
 
 ```
 set -a; . "$HOME/Projects/dotfiles/shell/shared/opencode.env"; set +a
-curl -s -d "<report body>" -H "Title: cntct.us SEO daily" -H "Priority: default" -H "Tags: mag" "https://ntfy.sh/$OPENCODE_NTFY_TOPIC"
+curl -s -H "Authorization: Bearer $OPENCODE_NTFY_TOKEN" -d "<report body>" -H "Title: cntct.us SEO daily" -H "Priority: default" -H "Tags: mag" "${OPENCODE_NTFY_SERVER:-https://ntfy.sh}/$OPENCODE_NTFY_TOPIC"
 ```
 
 Body, max about 15 lines:

@@ -33,7 +33,7 @@ Do exactly this:
 
 ```
 set -a; . "$HOME/Projects/dotfiles/shell/shared/opencode.env"; set +a
-curl -s -d "<one-line summary>" -H "Title: cntct.us SEO smoke" -H "Tags: test_tube" "https://ntfy.sh/$OPENCODE_NTFY_TOPIC"
+curl -s -H "Authorization: Bearer $OPENCODE_NTFY_TOKEN" -d "<one-line summary>" -H "Title: cntct.us SEO smoke" -H "Tags: test_tube" "${OPENCODE_NTFY_SERVER:-https://ntfy.sh}/$OPENCODE_NTFY_TOPIC"
 ```
 
 If anything in the chain fails, report the exact error string instead. Leave the tab open.
