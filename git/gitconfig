@@ -71,7 +71,8 @@
 [init]
   templatedir = ~/.git-templates
   defaultBranch = main
-# Machine-local identity lives in .gitconfig.user (untracked, included above).
+# Machine-local identity lives in ~/.gitconfig.user (untracked, included above;
+# the installer at repo root prompts for it on first run).
 [rebase]
 	instructionFormat = (%an <%ae>) %s
 

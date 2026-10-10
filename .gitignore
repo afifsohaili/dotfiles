@@ -17,4 +17,3 @@ tags
 shell/shared/opencode.env
 agents/skills/**/node_modules/
 shell/shared/secrets.sh
-.gitconfig.user

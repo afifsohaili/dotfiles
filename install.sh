@@ -154,6 +154,59 @@ if [ -f "$opencode_dir/package.json" ]; then
   fi
 fi
 
+# 1d. Git config. Git resolves a relative `include.path` against the directory of
+#     the config file it opened, not the symlink target. The tracked `git/gitconfig`
+#     includes `.gitconfig.user` relatively, so it must open from $HOME for that to
+#     resolve: link ~/.gitconfig -> git/gitconfig. The machine-local identity then
+#     lives at ~/.gitconfig.user as a real file, never in the repo. Without it git
+#     falls back to an auto-detected name <user@host>, which is exactly the commit
+#     warning "Your name and email address were configured automatically".
+git_config_src="$DOTFILES/git/gitconfig"
+git_config_dest="$HOME/.gitconfig"
+if [ -L "$git_config_dest" ] && [ "$(readlink "$git_config_dest")" = "$git_config_src" ]; then
+  say "already linked: $git_config_dest -> $git_config_src"
+else
+  if [ -e "$git_config_dest" ] || [ -L "$git_config_dest" ]; then
+    backup="$git_config_dest.pre-dotfiles-$(date +%Y%m%d-%H%M%S)"
+    run mv "$git_config_dest" "$backup"
+  fi
+  run ln -s "$git_config_src" "$git_config_dest"
+fi
+
+# Machine-local Git identity, prompted once. A rerun is a no-op while the file
+# exists. Non-interactive runs fall back to GIT_USER_NAME/GIT_USER_EMAIL, then
+# warn and skip rather than hang on a prompt.
+git_identity="$HOME/.gitconfig.user"
+write_git_identity() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] write %s:\n  [user]\n  \tname = %s\n  \temail = %s\n' "$git_identity" "$1" "$2"
+    return
+  fi
+  printf '[user]\n\tname = %s\n\temail = %s\n' "$1" "$2" > "$git_identity"
+  chmod 600 "$git_identity"
+  say "git identity: wrote $git_identity"
+}
+
+if [ -e "$git_identity" ]; then
+  say "git identity: $git_identity present"
+elif [ -n "${GIT_USER_NAME:-}" ] && [ -n "${GIT_USER_EMAIL:-}" ]; then
+  write_git_identity "$GIT_USER_NAME" "$GIT_USER_EMAIL"
+elif [ "$DRY_RUN" -eq 1 ]; then
+  printf '[dry-run] prompt for Git name/email and write %s\n' "$git_identity"
+elif [ -t 0 ]; then
+  printf 'Git author name: '
+  read -r git_name || git_name=""
+  printf 'Git author email: '
+  read -r git_email || git_email=""
+  if [ -n "$git_name" ] && [ -n "$git_email" ]; then
+    write_git_identity "$git_name" "$git_email"
+  else
+    say "warn: empty name or email; skipped $git_identity" >&2
+  fi
+else
+  say "warn: no TTY and GIT_USER_NAME/GIT_USER_EMAIL unset; skipped $git_identity" >&2
+fi
+
 # 2. Linux/Omarchy machine glue: omarchy/bin -> ~/.local/bin, and the systemd
 #    units -> ~/.config/systemd/user. Also restores links that
 #    `omarchy reinstall configs` may have moved aside.
