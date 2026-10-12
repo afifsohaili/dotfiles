@@ -194,6 +194,13 @@ The server binds `127.0.0.1` only. Remote tailnet access comes from
 issued on `443`/`8443`/`10000`; the tailnet link is WireGuard-encrypted, so
 plain HTTP on 15001 is fine.
 
+Pair a phone or browser with `oc-pair` (linked into `~/.local/bin` by
+`install.sh`): it mints a one-time link and QR for the tailnet URL
+(`http://<host>:15001/auth/connect/<code>`). Links die in 5 minutes and work
+once; the key the app receives lasts about 30 days. `opencode pair` cannot
+target the shared server — it always pairs the background service on a random
+loopback port — so `oc-pair` talks to 15001 directly.
+
 `herdr integration install opencode` writes files into `~/.config/opencode`
 (`plugins/`, `herdr-opencode/`, `cli.json` entry); those are gitignored. Reinstall
 it after a fresh clone.
