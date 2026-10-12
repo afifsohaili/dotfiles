@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# awb-edge — start agent-webbridge against Microsoft Edge (macOS) and wake the
+# extension. Safe to re-run. Never touches Google Chrome.
+#
+#   awb-edge [profile ...]   start the fleet + wake (default profile: Default)
+#   awb-edge down            stop the fleet (no legacy :10086 restore)
+#   awb-edge status          show fleet status
+#
+# Why: the stock `awb up` launches/wakes Google Chrome, and `awb connect` quits
+# it. This composes only the safe subset (`up --no-open`) plus an Edge-side wake
+# (edge binary + the extension popup URL, then popup-tab cleanup).
+# On non-macOS (Omarchy/Linux) it delegates to the stock CLI unchanged.
+set -euo pipefail
+
+AWB_REPO="${AWB_REPO:-$HOME/Projects/agent-webbridge}"
+AWB="$AWB_REPO/bin/awb.mjs"
+EDGE_BIN="${AWB_EDGE_BIN:-/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge}"
+
+if [ "$(uname -s)" != "Darwin" ]; then
+  exec node "$AWB" "$@"
+fi
+
+export AWB_CHROME_DIR="${AWB_CHROME_DIR:-$HOME/Library/Application Support/Microsoft Edge}"
+
+[ -x "$EDGE_BIN" ] || { echo "awb-edge: Microsoft Edge not found at $EDGE_BIN (set AWB_EDGE_BIN)" >&2; exit 1; }
+
+case "${1:-}" in
+  down)
+    exec node "$AWB" down --no-restore
+    ;;
+  status)
+    exec node "$AWB" status
+    ;;
+  up)
+    shift
+    ;;
+esac
+
+profiles=("$@")
+[ ${#profiles[@]} -gt 0 ] || profiles=("Default")
+
+node "$AWB" up "${profiles[@]}" --no-open
+
+resolve_info() { # <query> -> "dir<TAB>port<TAB>extId"
+  (cd "$AWB_REPO" && node -e '
+    import("./src/profiles.mjs").then((m) => {
+      const p = m.resolveProfile(process.argv[1]);
+      console.log([p.dir, p.port, p.extId || ""].join("\t"));
+    }).catch((e) => {
+      console.error("awb-edge: " + e.message);
+      process.exit(2);
+    });
+  ' "$1")
+}
+
+poll_connected() { # <port> -> 0 when the extension is connected
+  local s
+  s=$(curl -s -m 2 "http://127.0.0.1:$1/status" 2>/dev/null || true)
+  case "$s" in *'"extension_connected":true'*) return 0 ;; esac
+  return 1
+}
+
+close_popup_tabs() {
+  osascript >/dev/null 2>&1 <<'APPLESCRIPT' || true
+tell application "Microsoft Edge"
+  repeat with w in windows
+    set n to count of tabs of w
+    repeat with i from n to 1 by -1
+      try
+        if URL of tab i of w contains "popup.html" then close tab i of w
+      end try
+    end repeat
+  end repeat
+end tell
+APPLESCRIPT
+}
+
+fail=0
+for q in "${profiles[@]}"; do
+  info=$(resolve_info "$q")
+  IFS=$'\t' read -r dir port extid <<< "$info"
+
+  # Displace any stale extension socket (MV3 zombies survive daemon restarts),
+  # then wake the service worker with its popup page — the only external trigger.
+  curl -s -m 3 -X POST "http://127.0.0.1:$port/reconnect" >/dev/null 2>&1 || true
+  if [ -n "$extid" ]; then
+    "$EDGE_BIN" --profile-directory="$dir" "chrome-extension://$extid/popup.html" >/dev/null 2>&1 &
+  fi
+
+  ok=0
+  for _ in $(seq 1 40); do
+    if poll_connected "$port"; then ok=1; break; fi
+    sleep 0.5
+  done
+  if [ -n "$extid" ]; then close_popup_tabs; fi
+
+  if [ "$ok" = 1 ]; then
+    echo "awb-edge: $dir connected (:${port})"
+  else
+    if [ -z "$extid" ]; then
+      echo "awb-edge: $dir NOT connected — no Agent WebBridge extension in this profile" >&2
+    else
+      echo "awb-edge: $dir NOT connected after 20s — is Edge running?" >&2
+    fi
+    fail=1
+  fi
+done
+
+exit "$fail"
