@@ -4,6 +4,8 @@ service.json
 .tasks.db
 .tasks.db-shm
 .tasks.db-wal
+# Scheduled task definitions are per-machine; each host owns its own.
+tasks/
 # herdr's installer writes these; they are managed by `herdr integration install opencode`
 plugins/herdr-agent-state.js
 herdr-tui-session.js
