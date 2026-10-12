@@ -168,6 +168,7 @@ does not need zsh at all.
 | `~/.agents/skills` | symlink to `$DOTFILES/agents/skills` (shared global skill store, managed by `npx skills add -g`; writes land in the repo) |
 | `~/.agents/.skill-lock.json` | symlink to `$DOTFILES/agents/.skill-lock.json` |
 | shell | `shell/{shared,mac,linux,zsh}/`; login shell's rc (`~/.zshrc` or `~/.bashrc`) gains `# dotfiles` + `source "$HOME/Projects/dotfiles/init.{zsh,bash}"` |
+| `bin/` | cross-platform scripts (`transcribe-youtube`, `oc-pair`) symlinked into `~/.local/bin` by `install.sh` on Linux and macOS |
 | secrets | `shell/shared/secrets.sh` is gitignored; `install.sh` copies it from the tracked `shell/shared/secrets.example` and sets mode `0600` |
 | herdr plugins | not in the repo; reinstall with the `herdr plugin install` commands above |
 | opencode plugin deps | `config/opencode/package.json` is tracked; `node_modules` is not. Run `bun install` in `~/.config/opencode` after a fresh clone or config-tree move; `install.sh` does it when needed |
@@ -194,12 +195,15 @@ The server binds `127.0.0.1` only. Remote tailnet access comes from
 issued on `443`/`8443`/`10000`; the tailnet link is WireGuard-encrypted, so
 plain HTTP on 15001 is fine.
 
-Pair a phone or browser with `oc-pair` (linked into `~/.local/bin` by
-`install.sh`): it mints a one-time link and QR for the tailnet URL
-(`http://<host>:15001/auth/connect/<code>`). Links die in 5 minutes and work
-once; the key the app receives lasts about 30 days. `opencode pair` cannot
-target the shared server — it always pairs the background service on a random
-loopback port — so `oc-pair` talks to 15001 directly.
+Pair a phone or browser with `oc-pair` (`install.sh` links it into
+`~/.local/bin` on both Linux and macOS): it mints a one-time link and QR for
+the tailnet URL (`http://<host>:15001/auth/connect/<code>`). Links die in 5
+minutes and work once; the key the app receives lasts about 30 days.
+`opencode pair` cannot target the shared server — it always pairs the
+background service on a random loopback port — so `oc-pair` talks to 15001
+directly. The 15001 server must be running: the systemd unit on Linux, the
+`oc` shell function on macOS (`shell/shared/ai/oc.sh`), which starts it on
+demand.
 
 `herdr integration install opencode` writes files into `~/.config/opencode`
 (`plugins/`, `herdr-opencode/`, `cli.json` entry); those are gitignored. Reinstall
@@ -212,5 +216,5 @@ gitignored, so each machine must run `bun install` in `~/.config/opencode` once.
 Without it, `history-search.ts` and `opencode-tasks-v2.ts` fail to load with
 `Cannot find package '@opencode/plugin'` and their tools never register.
 `install.sh` runs it automatically when `package.json` is newer than
-`node_modules`. After installing, restart the server (`opencode service restart`
-on macOS, `systemctl --user restart opencode-server.service` on Linux).
+`node_modules`. After installing, restart the shared server (`oc --restart` on
+macOS, `systemctl --user restart opencode-server.service` on Linux).
