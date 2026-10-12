@@ -151,6 +151,8 @@ brew "protobuf"
 brew "pycparser"
 # Generic machine emulator and virtualizer
 brew "qemu"
+# QR code encoder (bin/oc-pair renders pairing codes)
+brew "qrencode"
 # Develop and deploy code with zero configuration
 brew "railway"
 # Generate C-based recognizers from regular expressions

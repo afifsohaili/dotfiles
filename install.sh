@@ -207,8 +207,9 @@ else
   say "warn: no TTY and GIT_USER_NAME/GIT_USER_EMAIL unset; skipped $git_identity" >&2
 fi
 
-# 2. Linux/Omarchy machine glue: omarchy/bin -> ~/.local/bin, and the systemd
-#    units -> ~/.config/systemd/user. Also restores links that
+# 2. Machine glue. `bin/` scripts are cross-platform (Linux + macOS) and land
+#    in ~/.local/bin. The Omarchy-only glue: omarchy/bin -> ~/.local/bin and
+#    the systemd units -> ~/.config/systemd/user. Also restores links that
 #    `omarchy reinstall configs` may have moved aside.
 #
 #    Sets LINK_FILES_CHANGED=1 when it creates or relinks anything, so the
@@ -239,6 +240,8 @@ link_files() {
     LINK_FILES_CHANGED=1
   done
 }
+
+link_files "$DOTFILES/bin" "$HOME/.local/bin"
 
 if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/bin" "$HOME/.local/bin"
@@ -322,28 +325,36 @@ if [ "$(uname -s)" = "Linux" ]; then
       run omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
     fi
   fi
-  # Expose the loopback shared server to the tailnet (idempotent). HTTPS certs
-  # are only issued on 443/8443/10000, so use plain HTTP on 15001; the tailnet
-  # transport is already WireGuard-encrypted. The ntfy server, once installed,
-  # is exposed the same way on 15002.
-  if command -v tailscale >/dev/null 2>&1; then
+else
+  say "machine glue: Omarchy-only parts skipped (not Linux)"
+fi
+
+# Expose the loopback shared server to the tailnet (idempotent, Linux and
+# macOS). HTTPS certs are only issued on 443/8443/10000, so use plain HTTP on
+# 15001; the tailnet transport is already WireGuard-encrypted. The ntfy server,
+# once installed, is exposed the same way on 15002.
+# macOS often has only the Tailscale app's bundled CLI, not `tailscale` on PATH.
+TAILSCALE_BIN=""
+if command -v tailscale >/dev/null 2>&1; then
+  TAILSCALE_BIN="$(command -v tailscale)"
+elif [ -x /Applications/Tailscale.app/Contents/MacOS/Tailscale ]; then
+  TAILSCALE_BIN=/Applications/Tailscale.app/Contents/MacOS/Tailscale
+fi
+if [ -n "$TAILSCALE_BIN" ]; then
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] tailscale serve --bg --http=15001 http://127.0.0.1:15001\n'
+  else
+    "$TAILSCALE_BIN" serve --bg --http=15001 http://127.0.0.1:15001 >/dev/null 2>&1 || \
+      say "warn: could not configure tailscale serve for :15001"
+  fi
+  if command -v ntfy >/dev/null 2>&1; then
     if [ "$DRY_RUN" -eq 1 ]; then
-      printf '[dry-run] tailscale serve --bg --http=15001 http://127.0.0.1:15001\n'
+      printf '[dry-run] tailscale serve --bg --http=15002 http://127.0.0.1:15002\n'
     else
-      tailscale serve --bg --http=15001 http://127.0.0.1:15001 >/dev/null 2>&1 || \
-        say "warn: could not configure tailscale serve for :15001"
-    fi
-    if command -v ntfy >/dev/null 2>&1; then
-      if [ "$DRY_RUN" -eq 1 ]; then
-        printf '[dry-run] tailscale serve --bg --http=15002 http://127.0.0.1:15002\n'
-      else
-        tailscale serve --bg --http=15002 http://127.0.0.1:15002 >/dev/null 2>&1 || \
-          say "warn: could not configure tailscale serve for :15002"
-      fi
+      "$TAILSCALE_BIN" serve --bg --http=15002 http://127.0.0.1:15002 >/dev/null 2>&1 || \
+        say "warn: could not configure tailscale serve for :15002"
     fi
   fi
-else
-  say "machine glue: skipped (not Linux)"
 fi
 
 # 3. Login-shell rc shim.
@@ -404,6 +415,8 @@ case "$(uname -s)" in
     say "      brew bundle install --file \"$DOTFILES/Brewfile\""
     say "  - opencode v2 (curl installer replaces the v1 ~/.opencode/bin binary):"
     say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
+    say "  - Shared server on :15001: the oc shell function starts it on demand;"
+    say "    tailscale serve is configured above. Pair a phone with oc-pair."
     say "  - Reload your shell: source ~/.zshrc"
     ;;
   Linux)

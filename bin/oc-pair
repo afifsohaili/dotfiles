@@ -6,7 +6,8 @@
 # `opencode pair` cannot do this: it always pairs the background service (a
 # different server on a random loopback port), so its links point at
 # 127.0.0.1 and carry a code the shared server rejects. This talks to the
-# shared server directly.
+# shared server directly. Works on Linux (systemd unit) and macOS (the `oc`
+# shell function starts the 15001 server on demand).
 #
 # Usage: oc-pair [--no-qr] [host]
 #
@@ -58,8 +59,23 @@ if [[ -z ${OPENCODE_PASSWORD:-} ]]; then
   exit 1
 fi
 
+# macOS usually has only the Tailscale app's bundled CLI, not `tailscale` on
+# PATH; accept either.
+tailscale_bin() {
+  if command -v tailscale >/dev/null 2>&1; then
+    command -v tailscale
+  elif [[ -x /Applications/Tailscale.app/Contents/MacOS/Tailscale ]]; then
+    printf '%s\n' /Applications/Tailscale.app/Contents/MacOS/Tailscale
+  fi
+}
+
 if [[ -z $HOST ]]; then
-  FQDN=$(tailscale status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//' || true)
+  TS=$(tailscale_bin)
+  if [[ -z $TS ]]; then
+    echo "error: Tailscale CLI not found; pass a host explicitly: oc-pair <host>" >&2
+    exit 1
+  fi
+  FQDN=$("$TS" status --json 2>/dev/null | jq -r '.Self.DNSName // empty' | sed 's/\.$//' || true)
   if [[ -z $FQDN ]]; then
     echo "error: Tailscale is not running; pass a host explicitly: oc-pair <host>" >&2
     exit 1
@@ -73,7 +89,7 @@ CODE=$(jq -r '.code // empty' <<<"$PAIR_JSON" 2>/dev/null)
 EXPIRES=$(jq -r '.expires_in // 300' <<<"$PAIR_JSON" 2>/dev/null)
 if [[ -z $CODE ]]; then
   echo "error: no pairing code from 127.0.0.1:$PORT: ${PAIR_JSON:-connection failed}" >&2
-  echo "hint: is opencode-server.service running, and does OPENCODE_PASSWORD match it?" >&2
+  echo "hint: start the shared server with oc, and check that OPENCODE_PASSWORD matches it" >&2
   exit 1
 fi
 
