@@ -329,10 +329,13 @@ else
   say "machine glue: Omarchy-only parts skipped (not Linux)"
 fi
 
-# Expose the loopback shared server to the tailnet (idempotent, Linux and
-# macOS). HTTPS certs are only issued on 443/8443/10000, so use plain HTTP on
-# 15001; the tailnet transport is already WireGuard-encrypted. The ntfy server,
-# once installed, is exposed the same way on 15002.
+# Expose the shared server to the tailnet. Linux binds 127.0.0.1 (systemd
+# unit), so map it with `tailscale serve` (idempotent). macOS binds 0.0.0.0
+# instead (shell/shared/ai/oc.sh), so the tailnet reaches it directly; a serve
+# mapping there would contend with that bind for the node's 15001 port, so a
+# stale mapping from older installs is removed. HTTPS certs are only issued on
+# 443/8443/10000, so use plain HTTP on 15001; the tailnet transport is already
+# WireGuard-encrypted. The ntfy server, once installed, is exposed on 15002.
 # macOS often has only the Tailscale app's bundled CLI, not `tailscale` on PATH.
 TAILSCALE_BIN=""
 if command -v tailscale >/dev/null 2>&1; then
@@ -341,7 +344,16 @@ elif [ -x /Applications/Tailscale.app/Contents/MacOS/Tailscale ]; then
   TAILSCALE_BIN=/Applications/Tailscale.app/Contents/MacOS/Tailscale
 fi
 if [ -n "$TAILSCALE_BIN" ]; then
-  if [ "$DRY_RUN" -eq 1 ]; then
+  if [ "$(uname -s)" = "Darwin" ]; then
+    if "$TAILSCALE_BIN" serve status 2>/dev/null | grep -q ':15001'; then
+      if [ "$DRY_RUN" -eq 1 ]; then
+        printf '[dry-run] tailscale serve --http=15001 off\n'
+      else
+        "$TAILSCALE_BIN" serve --http=15001 off >/dev/null 2>&1 || \
+          say "warn: could not remove stale tailscale serve for :15001"
+      fi
+    fi
+  elif [ "$DRY_RUN" -eq 1 ]; then
     printf '[dry-run] tailscale serve --bg --http=15001 http://127.0.0.1:15001\n'
   else
     "$TAILSCALE_BIN" serve --bg --http=15001 http://127.0.0.1:15001 >/dev/null 2>&1 || \
@@ -415,8 +427,9 @@ case "$(uname -s)" in
     say "      brew bundle install --file \"$DOTFILES/Brewfile\""
     say "  - opencode v2 (curl installer replaces the v1 ~/.opencode/bin binary):"
     say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
-    say "  - Shared server on :15001: the oc shell function starts it on demand;"
-    say "    tailscale serve is configured above. Pair a phone with oc-pair."
+    say "  - Shared server on :15001: the oc shell function starts it on demand,"
+    say "    bound to 0.0.0.0; tailnet clients reach it directly. Pair a phone"
+    say "    with oc-pair."
     say "  - Reload your shell: source ~/.zshrc"
     ;;
   Linux)

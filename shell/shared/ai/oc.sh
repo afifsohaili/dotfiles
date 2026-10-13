@@ -27,8 +27,12 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
       session_arg=(--continue)
     fi
     if ! lsof -i:15001 >/dev/null 2>&1; then
-      # Loopback only; expose to the tailnet with `tailscale serve`.
-      opencode serve --port 15001 --hostname 127.0.0.1 &
+      # All interfaces, so tailnet clients reach the URL oc-pair prints
+      # (http://<magicdns>:15001) directly. Plain HTTP; WireGuard encrypts
+      # tailnet traffic. The LAN also reaches this port, so OPENCODE_PASSWORD
+      # is the gate there. Never add a serve mapping for 15001 on macOS; it
+      # would contend with this bind for the node's tailnet port.
+      opencode serve --port 15001 --hostname 0.0.0.0 &
       local i=0
       while ! lsof -i:15001 >/dev/null 2>&1 && [ $i -lt 30 ]; do
         sleep 0.5

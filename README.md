@@ -175,7 +175,7 @@ does not need zsh at all.
 | nvim under Omarchy | repo config replaces `omarchy-nvim`; re-link after Omarchy updates |
 | mailpit | `yay -S mailpit-bin`; `omarchy/systemd/mailpit.service` linked to `~/.config/systemd/user/`, enabled manually with `systemctl --user enable --now mailpit.service` |
 | ntfy | `yay -S ntfysh-bin` (binary `/usr/bin/ntfy`; AUR `ntfy` is a different project); `omarchy/systemd/ntfy.service` + `config/ntfy/server.yml`; loopback `:15002` exposed with `tailscale serve --bg --http=15002`; auth required |
-| shared server | binds `127.0.0.1:15001` only; exposed to the tailnet with `tailscale serve --bg --http=15001 http://127.0.0.1:15001` (set by `install.sh`) |
+| shared server | macOS binds `0.0.0.0:15001` (tailnet clients reach `http://<host>:15001` directly, no serve); Linux binds `127.0.0.1:15001`, exposed with `tailscale serve --bg --http=15001 http://127.0.0.1:15001` (set by `install.sh`) |
 
 ## OpenCode v2
 
@@ -189,11 +189,13 @@ generates `OPENCODE_PASSWORD` into the gitignored `shell/shared/opencode.env`;
 the systemd unit reads the same file. Clients (`oc`) connect with
 `opencode --server http://127.0.0.1:15001`.
 
-The server binds `127.0.0.1` only. Remote tailnet access comes from
-`tailscale serve --bg --http=15001 http://127.0.0.1:15001`, which keeps the
-`http://<host>:15001` URL working across the tailnet. HTTPS certs are only
-issued on `443`/`8443`/`10000`; the tailnet link is WireGuard-encrypted, so
-plain HTTP on 15001 is fine.
+On Linux the server binds `127.0.0.1` only; remote tailnet access comes from
+`tailscale serve --bg --http=15001 http://127.0.0.1:15001` (set by
+`install.sh`). On macOS `oc` binds `0.0.0.0`, so tailnet clients reach
+`http://<host>:15001` directly and no serve mapping exists. HTTPS certs are
+only issued on `443`/`8443`/`10000`, and tailnet traffic is
+WireGuard-encrypted, so plain HTTP on 15001 is fine. A `0.0.0.0` bind is also
+reachable from the LAN; `OPENCODE_PASSWORD` gates it.
 
 Pair a phone or browser with `oc-pair` (`install.sh` links it into
 `~/.local/bin` on both Linux and macOS): it mints a one-time link and QR for
