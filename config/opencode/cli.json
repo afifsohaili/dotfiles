@@ -23,13 +23,26 @@
     "speed": 4
   },
   "session": {
-    "tps": true
+    "tps": true,
+    "image_preview": true,
+    "permissions": "prompt"
   },
   "attention": {
-    "notifications": true
+    "notifications": true,
+    "sound": true
   },
   "plugins": [
     "./plugins/ntfy",
     "./herdr-opencode"
-  ]
+  ],
+  "tabs": {
+    "layout": "horizontal",
+    "mode": "off"
+  },
+  "terminal": {
+    "copy": "select"
+  },
+  "debug": {
+    "devtools": false
+  }
 }

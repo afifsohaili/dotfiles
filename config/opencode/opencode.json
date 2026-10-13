@@ -1,114 +1,52 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": [],
-  "references": {
-    "projects": {
-      "path": "~/Projects",
-      "description": "Use for personal projects in ~/Projects"
-    },
-    "dotfiles": {
-      "path": "~/Projects/dotfiles",
-      "description": "Use for personal shell, editor, and tool configuration conventions"
-    },
-    "mise": {
-      "path": "~/.config/mise",
-      "description": "Use for mise tool version config and task definitions"
-    }
-  },
-  "default_agent": "ollama-dsv4f",
-  "websearch": false,
   "agents": {
     "explore": {
       "mode": "subagent",
       "model": "ollama-cloud/deepseek-v4.1-flash"
     }
   },
-  "permissions": [
-    { "action": "*", "resource": "*", "effect": "allow" },
-    { "action": "external_directory", "resource": "*", "effect": "ask" },
-    { "action": "external_directory", "resource": "/tmp/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/opencode/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/herdr/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/omarchy/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/hypr/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/alacritty/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/foot/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/kitty/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/ghostty/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.opencode/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.agents", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.agents/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/Tiga/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/Work/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/Desktop/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "/usr/share/omarchy/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.local/share/omarchy/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/systemd/user/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/opencode", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/mise", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/mise/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/herdr", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/omarchy", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/hypr", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/alacritty", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/foot", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/kitty", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/.config/ghostty", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/Projects", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/Projects/*", "effect": "allow" },
-    { "action": "external_directory", "resource": "~/Work", "effect": "allow" },
-    { "action": "read", "resource": "*", "effect": "allow" },
-    { "action": "read", "resource": "*.env", "effect": "deny" },
-    { "action": "read", "resource": "*.env.*", "effect": "deny" },
-    { "action": "read", "resource": "*.env.local", "effect": "deny" },
-    { "action": "read", "resource": "*.env.playwright", "effect": "allow" },
-    { "action": "read", "resource": "*.env.example", "effect": "allow" },
-    { "action": "read", "resource": ".env", "effect": "deny" },
-    { "action": "read", "resource": "*secrets.sh", "effect": "deny" },
-    { "action": "read", "resource": "*opencode.env", "effect": "deny" },
-    { "action": "read", "resource": "*opencode/secrets/*", "effect": "deny" },
-    { "action": "shell", "resource": "rm *", "effect": "ask" },
-    { "action": "shell", "resource": "rm ./*", "effect": "allow" },
-    { "action": "shell", "resource": "rm /Users/afifsohaili/Tiga/*", "effect": "allow" },
-    { "action": "shell", "resource": "rm /Users/afifsohaili/Projects/*", "effect": "allow" },
-    { "action": "shell", "resource": "omarchy", "effect": "allow" },
-    { "action": "shell", "resource": "omarchy *", "effect": "allow" },
-    { "action": "shell", "resource": "hyprctl *", "effect": "allow" },
-    { "action": "shell", "resource": "systemctl --user", "effect": "allow" },
-    { "action": "shell", "resource": "systemctl --user *", "effect": "allow" },
-    { "action": "shell", "resource": "sudo *", "effect": "ask" },
-    { "action": "shell", "resource": "pkexec *", "effect": "ask" }
-  ],
+  "default_agent": "ollama-dsv4f",
   "experimental": {
     "policies": [
-      { "action": "permission", "resource": "read:*secrets.sh", "effect": "deny" },
-      { "action": "permission", "resource": "read:*opencode.env", "effect": "deny" },
-      { "action": "permission", "resource": "read:*opencode/secrets/*", "effect": "deny" },
-      { "action": "permission", "resource": "shell:*secrets.sh*", "effect": "deny" },
-      { "action": "permission", "resource": "shell:*opencode.env*", "effect": "deny" }
+      {
+        "action": "permission",
+        "effect": "deny",
+        "resource": "read:*secrets.sh"
+      },
+      {
+        "action": "permission",
+        "effect": "deny",
+        "resource": "read:*opencode.env"
+      },
+      {
+        "action": "permission",
+        "effect": "deny",
+        "resource": "read:*opencode/secrets/*"
+      },
+      {
+        "action": "permission",
+        "effect": "deny",
+        "resource": "shell:*secrets.sh*"
+      },
+      {
+        "action": "permission",
+        "effect": "deny",
+        "resource": "shell:*opencode.env*"
+      }
     ]
   },
   "mcp": {
+    "railway": {
+      "command": [
+        "railway",
+        "mcp"
+      ],
+      "enabled": true,
+      "type": "local"
+    },
     "servers": {
-      "websearch": {
-        "type": "local",
-        "command": [
-          "uv",
-          "run",
-          "{env:HOME}/.config/opencode/mcp/ollama/web-search-mcp.py"
-        ],
-        "environment": {
-          "OLLAMA_API_KEY": "{file:~/.local/share/opencode/secrets/ollama_api_key}"
-        },
-        "disabled": false,
-        "codemode": false,
-        "timeout": {
-          "catalog": 120000,
-          "execution": 120000
-        }
-      },
       "pencil": {
-        "type": "local",
         "command": [
           "{env:HOME}/Projects/dotfiles/omarchy/bin/pen-mcp",
           "--app",
@@ -116,8 +54,314 @@
           "--agent",
           "openCodeCLI"
         ],
-        "disabled": false
+        "disabled": false,
+        "type": "local"
+      },
+      "websearch": {
+        "codemode": false,
+        "command": [
+          "uv",
+          "run",
+          "{env:HOME}/.config/opencode/mcp/ollama/web-search-mcp.py"
+        ],
+        "disabled": false,
+        "environment": {
+          "OLLAMA_API_KEY": "{file:~/.local/share/opencode/secrets/ollama_api_key}"
+        },
+        "timeout": {
+          "catalog": 120000,
+          "execution": 120000
+        },
+        "type": "local"
       }
     }
-  }
+  },
+  "permissions": [
+    {
+      "action": "*",
+      "effect": "allow",
+      "resource": "*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "ask",
+      "resource": "*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "/tmp/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/opencode/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/herdr/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/omarchy/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/hypr/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/alacritty/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/foot/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/kitty/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/ghostty/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.opencode/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.agents"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.agents/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/Tiga/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/Work/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/Desktop/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "/usr/share/omarchy/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.local/share/omarchy/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/systemd/user/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/opencode"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/mise"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/mise/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/herdr"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/omarchy"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/hypr"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/alacritty"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/foot"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/kitty"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/.config/ghostty"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/Projects"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/Projects/*"
+    },
+    {
+      "action": "external_directory",
+      "effect": "allow",
+      "resource": "~/Work"
+    },
+    {
+      "action": "read",
+      "effect": "allow",
+      "resource": "*"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": "*.env"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": "*.env.*"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": "*.env.local"
+    },
+    {
+      "action": "read",
+      "effect": "allow",
+      "resource": "*.env.playwright"
+    },
+    {
+      "action": "read",
+      "effect": "allow",
+      "resource": "*.env.example"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": ".env"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": "*secrets.sh"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": "*opencode.env"
+    },
+    {
+      "action": "read",
+      "effect": "deny",
+      "resource": "*opencode/secrets/*"
+    },
+    {
+      "action": "shell",
+      "effect": "ask",
+      "resource": "rm *"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "rm ./*"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "rm /Users/afifsohaili/Tiga/*"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "rm /Users/afifsohaili/Projects/*"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "omarchy"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "omarchy *"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "hyprctl *"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "systemctl --user"
+    },
+    {
+      "action": "shell",
+      "effect": "allow",
+      "resource": "systemctl --user *"
+    },
+    {
+      "action": "shell",
+      "effect": "ask",
+      "resource": "sudo *"
+    },
+    {
+      "action": "shell",
+      "effect": "ask",
+      "resource": "pkexec *"
+    }
+  ],
+  "plugins": [],
+  "references": {
+    "dotfiles": {
+      "description": "Use for personal shell, editor, and tool configuration conventions",
+      "path": "~/Projects/dotfiles"
+    },
+    "mise": {
+      "description": "Use for mise tool version config and task definitions",
+      "path": "~/.config/mise"
+    },
+    "projects": {
+      "description": "Use for personal projects in ~/Projects",
+      "path": "~/Projects"
+    }
+  },
+  "websearch": false
 }
