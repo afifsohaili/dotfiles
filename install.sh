@@ -329,13 +329,13 @@ else
   say "machine glue: Omarchy-only parts skipped (not Linux)"
 fi
 
-# Expose the shared server to the tailnet. Linux binds 127.0.0.1 (systemd
-# unit), so map it with `tailscale serve` (idempotent). macOS binds 0.0.0.0
-# instead (shell/shared/ai/oc.sh), so the tailnet reaches it directly; a serve
-# mapping there would contend with that bind for the node's 15001 port, so a
-# stale mapping from older installs is removed. HTTPS certs are only issued on
-# 443/8443/10000, so use plain HTTP on 15001; the tailnet transport is already
-# WireGuard-encrypted. The ntfy server, once installed, is exposed on 15002.
+# Expose the shared server to the tailnet. Both platforms bind it to 0.0.0.0
+# (Linux systemd unit, macOS shell/shared/ai/oc.sh), so the tailnet reaches
+# http://<magicdns>:15001 directly. A serve mapping for 15001 would contend
+# with that bind for the node's port, so any stale mapping from older installs
+# is removed (idempotent). HTTPS certs are only issued on 443/8443/10000, so
+# use plain HTTP on 15001; the tailnet transport is already WireGuard-encrypted.
+# The ntfy server, once installed, is exposed on 15002.
 # macOS often has only the Tailscale app's bundled CLI, not `tailscale` on PATH.
 TAILSCALE_BIN=""
 if command -v tailscale >/dev/null 2>&1; then
@@ -344,20 +344,13 @@ elif [ -x /Applications/Tailscale.app/Contents/MacOS/Tailscale ]; then
   TAILSCALE_BIN=/Applications/Tailscale.app/Contents/MacOS/Tailscale
 fi
 if [ -n "$TAILSCALE_BIN" ]; then
-  if [ "$(uname -s)" = "Darwin" ]; then
-    if "$TAILSCALE_BIN" serve status 2>/dev/null | grep -q ':15001'; then
-      if [ "$DRY_RUN" -eq 1 ]; then
-        printf '[dry-run] tailscale serve --http=15001 off\n'
-      else
-        "$TAILSCALE_BIN" serve --http=15001 off >/dev/null 2>&1 || \
-          say "warn: could not remove stale tailscale serve for :15001"
-      fi
+  if "$TAILSCALE_BIN" serve status 2>/dev/null | grep -q ':15001'; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] tailscale serve --http=15001 off\n'
+    else
+      "$TAILSCALE_BIN" serve --http=15001 off >/dev/null 2>&1 || \
+        say "warn: could not remove stale tailscale serve for :15001"
     fi
-  elif [ "$DRY_RUN" -eq 1 ]; then
-    printf '[dry-run] tailscale serve --bg --http=15001 http://127.0.0.1:15001\n'
-  else
-    "$TAILSCALE_BIN" serve --bg --http=15001 http://127.0.0.1:15001 >/dev/null 2>&1 || \
-      say "warn: could not configure tailscale serve for :15001"
   fi
   if command -v ntfy >/dev/null 2>&1; then
     if [ "$DRY_RUN" -eq 1 ]; then
@@ -447,9 +440,9 @@ case "$(uname -s)" in
     say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
     say "    If v1 was mise-managed, drop it so the v2 binary wins:"
     say "      mise uninstall opencode"
-    say "  - Tailnet access to the shared server (loopback bind + tailscale serve,"
-    say "    configured above by install.sh):"
-    say "      tailscale serve --bg --http=15001 http://127.0.0.1:15001"
+    say "  - Shared server on :15001: the systemd unit starts it, bound to"
+    say "    0.0.0.0; tailnet clients reach http://<magicdns>:15001 directly."
+    say "    Pair a phone with oc-pair."
     say "  - Self-hosted ntfy (tailnet only; bodies stay on this machine)."
     say "    Install ntfysh-bin, NOT ntfy (AUR 'ntfy' is a different project):"
     say "      yay -S ntfysh-bin"

@@ -4,8 +4,9 @@
 # starting it first if it is not already running.
 
 PORT=15001
-# Loopback only. Remote tailnet access is provided by `tailscale serve`.
-HOST=127.0.0.1
+# All interfaces, so tailnet clients reach http://<magicdns>:15001 directly.
+# Never map 15001 with `tailscale serve`; it contends with this bind.
+HOST=0.0.0.0
 
 # Target directory precedence:
 #   1. an explicit argument,
