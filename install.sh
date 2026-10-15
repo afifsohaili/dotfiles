@@ -423,6 +423,8 @@ case "$(uname -s)" in
     say "  - Shared server on :15001: the oc shell function starts it on demand,"
     say "    bound to 0.0.0.0; tailnet clients reach it directly. Pair a phone"
     say "    with oc-pair."
+    say "  - hop (file transfers this Mac <-> g4): run ssh-copy-id afifs-macbook-pro"
+    say "    from g4 once so g4 can push here; Mac -> g4 needs no keys (Tailscale SSH)."
     say "  - Reload your shell: source ~/.zshrc"
     ;;
   Linux)
@@ -443,6 +445,9 @@ case "$(uname -s)" in
     say "  - Shared server on :15001: the systemd unit starts it, bound to"
     say "    0.0.0.0; tailnet clients reach http://<magicdns>:15001 directly."
     say "    Pair a phone with oc-pair."
+    say "  - hop (file transfers g4 <-> Mac): one-time key install on the Mac,"
+    say "      ssh-copy-id afifs-macbook-pro"
+    say "    Mac -> g4 needs no keys (Tailscale SSH identity)."
     say "  - Self-hosted ntfy (tailnet only; bodies stay on this machine)."
     say "    Install ntfysh-bin, NOT ntfy (AUR 'ntfy' is a different project):"
     say "      yay -S ntfysh-bin"
