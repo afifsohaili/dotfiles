@@ -176,6 +176,7 @@ does not need zsh at all.
 | mailpit | `yay -S mailpit-bin`; `omarchy/systemd/mailpit.service` linked to `~/.config/systemd/user/`, enabled manually with `systemctl --user enable --now mailpit.service` |
 | ntfy | `yay -S ntfysh-bin` (binary `/usr/bin/ntfy`; AUR `ntfy` is a different project); `omarchy/systemd/ntfy.service` + `config/ntfy/server.yml`; loopback `:15002` exposed with `tailscale serve --bg --http=15002`; auth required |
 | shared server | both platforms bind `0.0.0.0:15001`; tailnet clients reach `http://<host>:15001` directly, no serve (`install.sh` removes any stale mapping for 15001) |
+| hop | `shell/shared/hop.sh`, auto-sourced on both platforms; `hop push`/`hop pull` over the tailnet. Mac->g4 rides Tailscale SSH identity; g4->Mac rides macOS Remote Login with `~/.ssh/id_ed25519` (`ssh-copy-id afifs-macbook-pro` once) |
 
 ## OpenCode v2
 
@@ -220,3 +221,35 @@ Without it, `history-search.ts` and `opencode-tasks-v2.ts` fail to load with
 `install.sh` runs it automatically when `package.json` is newer than
 `node_modules`. After installing, restart the shared server (`oc --restart` on
 macOS, `systemctl --user restart opencode-server.service` on Linux).
+
+## hop (file transfers g4 <-> Mac)
+
+`shell/shared/hop.sh` defines `hop`; `shell/shared/*.sh` auto-sources on both
+platforms, so the same command exists on g4 and the Mac:
+
+```
+hop push <src> [dst]   # send to the other machine
+hop pull <src> [dst]   # fetch from the other machine
+```
+
+- `~/x` means "x under the home directory of whichever machine holds the
+  file" (g4 `/home/afifsohaili`, macOS `/Users/afifsohaili`); absolute paths
+  stay literal.
+- Without `dst` the copy lands at the same path it came from; with `dst` it
+  renames or moves. Directories copy recursively.
+- The peer is picked by OS (Linux -> `afifs-macbook-pro`, Darwin ->
+  `afifsohailig4`), overridable with `HOP_HOST`.
+
+Auth differs per direction, by design:
+
+| Direction | Transport | Credential |
+| --- | --- | --- |
+| Mac -> g4 | Tailscale SSH | tailnet identity, no keys |
+| g4 -> Mac | macOS Remote Login (OpenSSH) | `~/.ssh/id_ed25519`, installed once with `ssh-copy-id afifs-macbook-pro` |
+
+g4 advertises Tailscale SSH (`tailscale set --ssh`) and the tailnet ACL `ssh`
+rule is `accept` for own devices, so any tailnet client can `ssh afifsohailig4`
+without keys. The Mac cannot serve Tailscale SSH: the server component exists
+only on Linux and the Homebrew `tailscaled` variant, not the macOS GUI app.
+rsync interops both ways (GNU rsync on g4, Apple `openrsync` on the Mac);
+verified with files and directories in both directions.
