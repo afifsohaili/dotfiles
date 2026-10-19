@@ -37,14 +37,6 @@
     ]
   },
   "mcp": {
-    "railway": {
-      "command": [
-        "railway",
-        "mcp"
-      ],
-      "enabled": true,
-      "type": "local"
-    },
     "servers": {
       "pencil": {
         "command": [
