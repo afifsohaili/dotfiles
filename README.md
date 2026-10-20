@@ -184,6 +184,9 @@ does not need zsh at all.
 `mcp.servers`). The TUI config lives in `cli.json` (V2 replaced `tui.json`).
 Platform-specific permission rules are merged into the one file; the old
 `OPENCODE_CONFIG` split (`opencode.mac.json` / `opencode.linux.json`) is gone.
+Omarchy-only MCP servers are injected by a Linux-gated plugin in
+`config/opencode/plugins/cua-driver.ts`, so the shared `opencode.json` stays
+Mac-clean and no platform-specific config file is needed.
 
 The shared server on port 15001 needs a password in V2. `shell/shared/opencode.sh`
 generates `OPENCODE_PASSWORD` into the gitignored `shell/shared/opencode.env`;

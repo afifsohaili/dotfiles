@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Start Cua Driver as a bounded MCP server inside Omarchy's Hyprland session.
+# The MCP process owns the runtime; no daemon or socket is involved.
+set -euo pipefail
+
+if [[ -z ${WAYLAND_DISPLAY:-} || -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+  while IFS='=' read -r key value; do
+    case "$key" in
+      WAYLAND_DISPLAY|HYPRLAND_INSTANCE_SIGNATURE|DISPLAY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS|XDG_SESSION_TYPE|XDG_CURRENT_DESKTOP)
+        export "$key=$value"
+        ;;
+    esac
+  done < <(systemctl --user show-environment 2>/dev/null || true)
+fi
+
+if [[ -z ${WAYLAND_DISPLAY:-} || -z ${HYPRLAND_INSTANCE_SIGNATURE:-} ]]; then
+  printf 'cua-driver-mcp: no Hyprland Wayland session; run inside Omarchy\n' >&2
+  exit 1
+fi
+
+script_path="$(readlink -f -- "${BASH_SOURCE[0]}")"
+repo_root="$(cd -- "$(dirname -- "$script_path")/../.." && pwd)"
+manifest="$repo_root/omarchy/cua/capability-manifest.yaml"
+driver="${CUA_DRIVER_BIN:-$HOME/.local/bin/cua-driver}"
+
+if [[ ! -x $driver ]]; then
+  printf 'cua-driver-mcp: driver not executable: %s\n' "$driver" >&2
+  exit 1
+fi
+if [[ ! -f $manifest ]]; then
+  printf 'cua-driver-mcp: manifest missing: %s\n' "$manifest" >&2
+  exit 1
+fi
+
+export CUA_DRIVER_RS_ENABLE_WAYLAND=1
+export CUA_DRIVER_PERMISSION_MODE=bounded
+export CUA_DRIVER_CAPABILITY_MANIFEST_FILE="$manifest"
+export CUA_DRIVER_CAPABILITY_MANIFEST_APPROVED=1
+
+exec "$driver" mcp

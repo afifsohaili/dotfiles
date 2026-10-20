@@ -1,0 +1,40 @@
+version: 3
+expires_after: 24h
+idle_timeout: 8h
+
+allow:
+  tools:
+    - start_session
+    - end_session
+    - list_sessions
+    - get_session
+    - launch_app
+    - bring_to_front
+    - list_windows
+    - get_window_state
+    - get_screen_size
+    - click
+    - double_click
+    - right_click
+    - type_text
+    - press_key
+    - hotkey
+    - scroll
+    - set_value
+    - invoke_menu
+    - verify_state
+    - zoom
+
+resources:
+  apps:
+    - executable: /usr/bin/google-chrome-stable
+      launch: true
+      windows: all
+      terminate: driver_launched
+    - executable: /opt/google/chrome/chrome
+      launch: false
+      windows: all
+      terminate: driver_launched
+
+  desktop:
+    display: false
