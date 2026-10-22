@@ -25,7 +25,8 @@
   "session": {
     "tps": true,
     "image_preview": true,
-    "permissions": "prompt"
+    "permissions": "prompt",
+    "thinking": "hide"
   },
   "attention": {
     "notifications": true,
@@ -44,5 +45,9 @@
   },
   "debug": {
     "devtools": false
+  },
+  "prompt": {
+    "editor": false,
+    "image_preview": true
   }
 }
