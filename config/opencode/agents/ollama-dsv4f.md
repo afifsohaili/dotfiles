@@ -1,7 +1,7 @@
 ---
 description: "Fast executor, lower intelligence. Use for small, straightforward tasks: simple refactoring, commit messages, codebase-wide renames."
 mode: all
-model: ollama-cloud/deepseek-v4.1-flash:1017#max
+model: opencode-go/deepseek-v4.1-flash#max
 permissions:
   - action: subagent
     resource: "*"
