@@ -3,11 +3,28 @@
   "agents": {
     "explore": {
       "mode": "subagent",
-      "model": "ollama-cloud/deepseek-v4.1-flash"
+      "model": "ollama-cloud/deepseek-v4.1-flash",
+      "permissions": [
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
+    },
+    "general": {
+      "permissions": [
+        {
+          "action": "subagent",
+          "resource": "*",
+          "effect": "deny"
+        }
+      ]
     }
   },
   "default_agent": "ollama-dsv4f",
   "experimental": {
+    "subagent_depth": 2,
     "policies": [
       {
         "action": "permission",
