@@ -302,6 +302,11 @@
       "resource": "*opencode/secrets/*"
     },
     {
+      "action": "read",
+      "effect": "ask",
+      "resource": "*opencode/service.json"
+    },
+    {
       "action": "shell",
       "effect": "ask",
       "resource": "rm *"
@@ -345,6 +350,11 @@
       "action": "shell",
       "effect": "allow",
       "resource": "systemctl --user *"
+    },
+    {
+      "action": "shell",
+      "effect": "ask",
+      "resource": "*service.json*"
     },
     {
       "action": "shell",
