@@ -5,12 +5,6 @@ model: openai/gpt-6.1-sol#max
 permissions:
   - action: subagent
     resource: "*"
-    effect: deny
-  - action: subagent
-    resource: oai-gpt61-sol
-    effect: allow
-  - action: subagent
-    resource: explore
     effect: allow
 ---
 
