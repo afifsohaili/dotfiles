@@ -30,9 +30,12 @@
 //                         URL, e.g. http://<machine>.<tailnet>.ts.net:15001).
 //                         Unset => no click action, so a phone never opens 127.0.0.1.
 //
-// Desktop notifications and sounds go through the native `attention` API, which
-// only fires while the terminal is blurred. ntfy always fires.
+// ntfy titles carry a machine label derived from the hostname (g4, mac, or the
+// short hostname), so a phone can tell which machine settled the turn. Native
+// notifications and sounds go through the `attention` API on macOS only; on
+// Linux they are skipped. ntfy always fires.
 
+import os from "node:os"
 import path from "node:path"
 import { Plugin } from "@opencode/plugin/tui"
 
@@ -48,6 +51,20 @@ const NTFY_SERVER_URL = process.env.OPENCODE_NTFY_URL?.replace(/\/+$/, "")
 // V2 web sessions live at /server/<base64url(server URL)>/session/<id>. The v1
 // /session/<id> path no longer exists and rendered the web app's 404 page.
 const NTFY_SERVER_KEY = NTFY_SERVER_URL ? Buffer.from(NTFY_SERVER_URL).toString("base64url") : ""
+
+const MACHINE_LABELS: Record<string, string> = {
+  afifsohailig4: "g4",
+  "afifs-macbook-pro": "mac",
+}
+
+export function machineLabel(hostname: string): string {
+  const short = hostname.split(".")[0].toLowerCase()
+  return MACHINE_LABELS[short] ?? short
+}
+
+export function desktopNotifyEnabled(platform: string): boolean {
+  return platform === "darwin"
+}
 
 // Dedupe window per request id. A hot reload can replay the same event.
 const DEDUPE_MS = 3_000
@@ -108,14 +125,16 @@ export default Plugin.define({
       tags?: string
       sessionID?: string
     }) => {
-      await context.attention.notify({
-        title: input.title,
-        message: input.message,
-        notification: { when: "blurred" },
-        sound: { name: input.sound, when: "blurred" },
-      })
+      if (desktopNotifyEnabled(process.platform)) {
+        await context.attention.notify({
+          title: input.title,
+          message: input.message,
+          notification: { when: "blurred" },
+          sound: { name: input.sound, when: "blurred" },
+        })
+      }
       await sendNtfy({
-        title: input.title,
+        title: `[${machineLabel(os.hostname())}] ${input.title}`,
         body: input.message,
         priority: input.priority,
         ...(input.tags ? { tags: input.tags } : {}),
@@ -137,32 +156,34 @@ export default Plugin.define({
     const stopSucceeded = context.data.on("session.execution.succeeded", (event) => {
       const sessionID = event.data?.sessionID
       if (!sessionID) return
-      void once(`done-${sessionID}`, () =>
-        alert({
-          title: "Opencode",
-          message: `Your task in ${projectName(sessionID, event.location?.directory)} has been completed`,
+      void once(`done-${sessionID}`, () => {
+        const project = projectName(sessionID, event.location?.directory)
+        return alert({
+          title: `Opencode - ${project}`,
+          message: `Your task in ${project} has been completed`,
           sound: "done",
           priority: "default",
           tags: "white_check_mark",
           sessionID,
-        }),
-      )
+        })
+      })
     })
 
     const stopFailed = context.data.on("session.execution.failed", (event) => {
       const sessionID = event.data?.sessionID
       if (!sessionID) return
       const error = event.data?.error?.message
-      void once(`fail-${sessionID}`, () =>
-        alert({
-          title: "Opencode",
-          message: `Your task in ${projectName(sessionID, event.location?.directory)} has failed: ${error ?? "unknown error"}`,
+      void once(`fail-${sessionID}`, () => {
+        const project = projectName(sessionID, event.location?.directory)
+        return alert({
+          title: `Opencode - ${project}`,
+          message: `Your task in ${project} has failed: ${error ?? "unknown error"}`,
           sound: "error",
           priority: "high",
           tags: "warning",
           sessionID,
-        }),
-      )
+        })
+      })
     })
 
     const stopPermission = context.data.on("permission.asked", (event) => {

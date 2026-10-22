@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test"
 
+let currentHostname = "afifsohailig4"
+
+mock.module("node:os", () => ({
+  default: { hostname: () => currentHostname },
+  hostname: () => currentHostname,
+}))
+
 mock.module("@opencode/plugin/tui", () => ({
   Plugin: { define: (plugin: unknown) => plugin },
 }))
@@ -9,7 +16,7 @@ process.env.OPENCODE_NTFY_SERVER = "http://ntfy.test"
 process.env.OPENCODE_NTFY_URL = "http://127.0.0.1:15001"
 delete process.env.OPENCODE_NTFY_TOKEN
 
-const { default: plugin } = await import("./tui")
+const { default: plugin, desktopNotifyEnabled, machineLabel } = await import("./tui")
 
 type Publish = {
   url: string
@@ -82,6 +89,7 @@ describe("ntfy plugin", () => {
   let publishes: Publish[]
 
   beforeEach(async () => {
+    currentHostname = "afifsohailig4"
     publishes = []
     globalThis.fetch = (async (url: string | URL, init?: RequestInit) => {
       publishes.push({
@@ -91,6 +99,18 @@ describe("ntfy plugin", () => {
       })
       return new Response("", { status: 200 })
     }) as typeof fetch
+  })
+
+  test("machine labels map known hostnames and fall back to the short hostname", () => {
+    expect(machineLabel("afifsohailig4")).toBe("g4")
+    expect(machineLabel("afifs-macbook-pro")).toBe("mac")
+    expect(machineLabel("AFIFSOHAILIG4.local")).toBe("g4")
+    expect(machineLabel("Work-Laptop.local")).toBe("work-laptop")
+  })
+
+  test("desktop notifications are macOS only", () => {
+    expect(desktopNotifyEnabled("darwin")).toBe(true)
+    expect(desktopNotifyEnabled("linux")).toBe(false)
   })
 
   test("session.execution.succeeded publishes a completion with project name", async () => {
@@ -105,10 +125,11 @@ describe("ntfy plugin", () => {
 
     expect(publishes).toHaveLength(1)
     expect(publishes[0].url).toBe("http://ntfy.test/test-topic")
-    expect(publishes[0].headers.Title).toBe("Opencode")
+    expect(publishes[0].headers.Title).toBe("[g4] Opencode - dotfiles")
     expect(publishes[0].body).toBe("Your task in dotfiles has been completed")
     expect(publishes[0].headers.Tags).toBe("white_check_mark")
     expect(publishes[0].headers.Priority).toBe("default")
+    expect(harness.attention).toHaveLength(0)
   })
 
   test("completion falls back to the event directory when project data is missing", async () => {
@@ -162,7 +183,7 @@ describe("ntfy plugin", () => {
     await flush()
 
     expect(publishes).toHaveLength(1)
-    expect(publishes[0].headers.Title).toBe("Opencode")
+    expect(publishes[0].headers.Title).toBe("[g4] Opencode - dotfiles")
     expect(publishes[0].body).toBe("Your task in dotfiles has failed: provider exploded")
     expect(publishes[0].headers.Tags).toBe("warning")
   })
@@ -189,7 +210,7 @@ describe("ntfy plugin", () => {
     await flush()
 
     expect(publishes).toHaveLength(1)
-    expect(publishes[0].headers.Title).toBe("Permission needed in dotfiles")
+    expect(publishes[0].headers.Title).toBe("[g4] Permission needed in dotfiles")
     expect(publishes[0].body).toBe("shell: git push origin main")
     expect(publishes[0].headers.Tags).toBe("warning")
     expect(publishes[0].headers.Priority).toBe("high")
@@ -226,7 +247,7 @@ describe("ntfy plugin", () => {
     await flush()
 
     expect(publishes).toHaveLength(1)
-    expect(publishes[0].headers.Title).toBe("Question from dotfiles")
+    expect(publishes[0].headers.Title).toBe("[g4] Question from dotfiles")
     expect(publishes[0].body).toBe("Waiting for your input")
     expect(publishes[0].headers.Tags).toBe("warning")
   })
@@ -241,6 +262,43 @@ describe("ntfy plugin", () => {
     harness.emit("session.execution.succeeded", execution("session.execution.succeeded", "ses_1"))
     await flush()
 
+    expect(publishes[0].headers.Title).toBe("[g4] Opencode - peek a boo")
     expect(publishes[0].body).toBe("Your task in peek a boo has been completed")
+  })
+
+  test("unknown hostnames still label the ntfy title", async () => {
+    currentHostname = "work-laptop"
+    const harness = createHarness({
+      sessions: { ses_1: { id: "ses_1", projectID: "proj_1" } },
+      projects: { proj_1: DOTFILES },
+    })
+    await plugin.setup(harness.context)
+
+    harness.emit("session.execution.succeeded", execution("session.execution.succeeded", "ses_1"))
+    await flush()
+
+    expect(publishes[0].headers.Title).toBe("[work-laptop] Opencode - dotfiles")
+  })
+
+  test("macOS sends a desktop notification without the machine prefix", async () => {
+    const original = process.platform
+    Object.defineProperty(process, "platform", { value: "darwin", configurable: true })
+    try {
+      const harness = createHarness({
+        sessions: { ses_1: { id: "ses_1", projectID: "proj_1" } },
+        projects: { proj_1: DOTFILES },
+      })
+      await plugin.setup(harness.context)
+
+      harness.emit("session.execution.succeeded", execution("session.execution.succeeded", "ses_1"))
+      await flush()
+
+      expect(harness.attention).toHaveLength(1)
+      expect(harness.attention[0].title).toBe("Opencode - dotfiles")
+      expect(harness.attention[0].sound).toEqual({ name: "done", when: "blurred" })
+      expect(publishes[0].headers.Title).toBe("[g4] Opencode - dotfiles")
+    } finally {
+      Object.defineProperty(process, "platform", { value: original, configurable: true })
+    }
   })
 })
