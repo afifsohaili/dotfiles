@@ -12,7 +12,8 @@
 #
 #   1. opencode's sqlite DB `project_directory` joined to `project` and
 #      ordered by `project.time_updated` descending (most recent first).
-#   2. directories one level deep under the projects root, sorted.
+#   2. directories one level deep under each projects root, sorted per root.
+#      Roots default to `$HOME/Projects` and `$HOME/Work`, in that order.
 #
 # Nonexistent paths and hidden dirs are dropped. Every optional input is
 # tolerated: a missing sqlite3, DB, table, or projects dir yields whatever
@@ -68,7 +69,8 @@
 #
 # Testability seams (see omarchy/plans/oc-project.md):
 #   OC_PROJECT_OPENCODE_DB   default $HOME/.local/share/opencode/opencode.db
-#   OC_PROJECT_PROJECTS_DIR  default $HOME/Projects
+#   OC_PROJECT_PROJECTS_DIR  colon-separated roots; default
+#                            $HOME/Projects:$HOME/Work
 #   OC_PROJECT_MENU_SELECT   default omarchy-menu-select
 #   OC_PROJECT_MENU_INPUT    default omarchy-menu-input
 #   OC_PROJECT_HYPRCTL       default hyprctl
@@ -85,7 +87,7 @@
 set -euo pipefail
 
 OPENCODE_DB="${OC_PROJECT_OPENCODE_DB:-$HOME/.local/share/opencode/opencode.db}"
-PROJECTS_DIR="${OC_PROJECT_PROJECTS_DIR:-$HOME/Projects}"
+PROJECTS_DIRS="${OC_PROJECT_PROJECTS_DIR:-$HOME/Projects:$HOME/Work}"
 MENU_SELECT="${OC_PROJECT_MENU_SELECT:-omarchy-menu-select}"
 MENU_INPUT="${OC_PROJECT_MENU_INPUT:-omarchy-menu-input}"
 HYPRCTL="${OC_PROJECT_HYPRCTL:-hyprctl}"
@@ -150,15 +152,20 @@ db_paths() {
 
 # ------------------------------------------------------- projects source
 
-# Print directories one level deep under PROJECTS_DIR, sorted, no hidden.
+# Print directories one level deep under each projects root, roots in the
+# order given, each root sorted, no hidden.
 projects_paths() {
-  [[ -d $PROJECTS_DIR ]] || return 0
+  local root entry
+  local -a roots=()
+  IFS=':' read -r -a roots <<<"$PROJECTS_DIRS" || true
 
-  local entry
-  for entry in "$PROJECTS_DIR"/*; do
-    [[ -d $entry ]] || continue
-    printf '%s\n' "$entry"
-  done | LC_ALL=C sort
+  for root in "${roots[@]}"; do
+    [[ -n $root && -d $root ]] || continue
+    for entry in "$root"/*; do
+      [[ -d $entry ]] || continue
+      printf '%s\n' "$entry"
+    done | LC_ALL=C sort
+  done
 }
 
 # ----------------------------------------------------------------- list

@@ -4,7 +4,9 @@
 #
 # Covers: ordering (recent DB first), dedupe by canonical path, dropping
 # nonexistent DB paths, tolerating a missing DB, tolerating a missing
-# Projects dir, skipping hidden dirs, exact menu row format, empty result.
+# Projects dir, skipping hidden dirs, exact menu row format, empty result,
+# multiple project roots (default ~/Projects + ~/Work, colon-separated seam,
+# missing roots tolerated, empty root entries ignored).
 
 set -uo pipefail
 
@@ -141,3 +143,56 @@ OC_PROJECT_OPENCODE_DB="$tmp/does-not-exist.db" \
   run_list
 assert_status 0 "$LIST_STATUS" "empty result exits 0"
 assert_eq "" "$LIST_OUT" "empty result writes no stdout"
+
+# --- 9. default roots: ~/Projects and ~/Work -----------------------------
+home="$tmp/home"
+mkdir -p "$home/Projects/home-proj" "$home/Work/work-proj"
+real_home_proj="$(readlink -f "$home/Projects/home-proj")"
+real_work_proj="$(readlink -f "$home/Work/work-proj")"
+
+default_out="$(env -u OC_PROJECT_PROJECTS_DIR -u OC_PROJECT_OPENCODE_DB \
+  HOME="$home" "$SCRIPT" list 2>"$tmp/stderr")"
+default_status=$?
+assert_status 0 "$default_status" "default roots exit 0"
+assert_contains "$default_out" "$real_home_proj" "default roots include ~/Projects"
+assert_contains "$default_out" "$real_work_proj" "default roots include ~/Work"
+
+# --- 10. extra root appended after the first -----------------------------
+work="$tmp/work"
+mkdir -p "$work/work-a" "$work/work-b"
+real_wa="$(readlink -f "$work/work-a")"
+real_wb="$(readlink -f "$work/work-b")"
+
+OC_PROJECT_OPENCODE_DB="$tmp/does-not-exist.db" \
+  OC_PROJECT_PROJECTS_DIR="$projects:$work" \
+  run_list
+assert_status 0 "$LIST_STATUS" "multiple roots exit 0"
+assert_eq "$real_alpha" "$(printf '%s' "${ROWS[0]:-}" | cut -f3)" "first root sorts first"
+assert_eq "$real_beta" "$(printf '%s' "${ROWS[1]:-}" | cut -f3)" "first root sorts second"
+assert_eq "$real_wa" "$(printf '%s' "${ROWS[2]:-}" | cut -f3)" "second root follows"
+assert_eq "$real_wb" "$(printf '%s' "${ROWS[3]:-}" | cut -f3)" "second root keeps its sort"
+assert_eq "4" "${#ROWS[@]}" "multiple roots emit exactly four rows"
+
+# --- 11. missing root in a list is tolerated -----------------------------
+OC_PROJECT_OPENCODE_DB="$tmp/does-not-exist.db" \
+  OC_PROJECT_PROJECTS_DIR="$projects:$tmp/does-not-exist" \
+  run_list
+assert_status 0 "$LIST_STATUS" "missing extra root is tolerated (exit 0)"
+assert_contains "$LIST_OUT" "$real_alpha" "missing extra root still lists first root"
+assert_contains "$LIST_OUT" "$real_beta" "missing extra root still lists first root"
+
+# --- 12. empty root entries are ignored ----------------------------------
+OC_PROJECT_OPENCODE_DB="$tmp/does-not-exist.db" \
+  OC_PROJECT_PROJECTS_DIR=":$projects:" \
+  run_list
+assert_status 0 "$LIST_STATUS" "empty root entries are tolerated (exit 0)"
+assert_eq "2" "${#ROWS[@]}" "empty root entries add no rows"
+
+# --- 13. dedupe across roots ---------------------------------------------
+ln -s "$projects/alpha" "$work/alpha-link"
+OC_PROJECT_OPENCODE_DB="$tmp/does-not-exist.db" \
+  OC_PROJECT_PROJECTS_DIR="$projects:$work" \
+  run_list
+assert_status 0 "$LIST_STATUS" "symlinked duplicate across roots exits 0"
+assert_eq "1" "$(count_matching "$real_alpha")" "duplicate across roots appears once"
+assert_eq "4" "${#ROWS[@]}" "only the duplicate is dropped"

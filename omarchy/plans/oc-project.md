@@ -231,3 +231,10 @@ injectable seams via environment variables:
 - `omarchy:summary`/`omarchy:args` metadata is present but inert: Omarchy's
   command discovery scans only `omarchy-*` binaries, and this file is
   `oc-project`. It is a keybinding target, not an `omarchy` subcommand.
+
+### Post-completion change (2026-10-20)
+- `OC_PROJECT_PROJECTS_DIR` is now a colon-separated list of roots; the
+  default is `$HOME/Projects:$HOME/Work`. Roots are walked in order, each
+  sorted, before the existing canonical dedupe. A missing or empty root
+  contributes nothing. New tests: 14 assertions in `oc_project_list_test.sh`;
+  suite is 8 files / 188 assertions, all passing.
