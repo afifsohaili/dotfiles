@@ -241,7 +241,8 @@ assert_contains "$(cat "$dispatch_log")" "hl.dsp.focus" "primary dispatch form a
 assert_contains "$(cat "$dispatch_log")" "focuswindow address:0x77711" "fallback focuswindow used"
 
 # --- 12. V2 positional directory form ------------------------------------
-# V2 has no `attach --dir`; `oc` runs `opencode --server URL <flags> <dir>`.
+# V2 has no `attach --dir`; older builds ran
+# `opencode --server URL <flags> <dir>`, current `oc` drops `--server`.
 new_case v2positional
 add_child 1700 1701
 set_cmdline 1701 opencode --server http://127.0.0.1:15001 --continue "$target"
@@ -258,3 +259,12 @@ add_client 1800 0x99913 org.omarchy.opencode
 run_focus "$target"
 assert_status 0 "$FOCUS_STATUS" "V2 positional dir (--session) exits 0"
 assert_eq "0x99913" "$FOCUS_OUT" "V2 session form prints address"
+
+# --- 14. current oc form: discovery, no --server --------------------------
+new_case v2discovery
+add_child 1900 1901
+set_cmdline 1901 opencode --continue "$target"
+add_client 1900 0xaaa14 org.omarchy.opencode
+run_focus "$target"
+assert_status 0 "$FOCUS_STATUS" "V2 discovery form (no --server) exits 0"
+assert_eq "0xaaa14" "$FOCUS_OUT" "V2 discovery form prints address"

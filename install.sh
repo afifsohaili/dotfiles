@@ -243,23 +243,86 @@ link_files() {
 
 link_files "$DOTFILES/bin" "$HOME/.local/bin"
 
+# bin/oc-pair is gone; native `opencode pair` replaces it. Drop the stale
+# symlink so the old command cannot talk to a server that no longer answers.
+if [ -L "$HOME/.local/bin/oc-pair" ]; then
+  run rm -f "$HOME/.local/bin/oc-pair"
+fi
+
+# 2b. Shared opencode service. Port 15001 belongs to the managed background
+#     service, not to an explicit `opencode serve`. Its settings live in
+#     ~/.config/opencode/service.json and are machine state, so provision them
+#     here. `service set` stops the service on every write: only write when the
+#     value differs, or an unchanged rerun would kill running sessions.
+OPENCODE_BIN=""
+for candidate in "$HOME/.opencode/bin/opencode" "$(command -v opencode 2>/dev/null || true)" /usr/bin/opencode "$HOME/.local/bin/opencode"; do
+  [ -n "$candidate" ] && [ -x "$candidate" ] || continue
+  # v1 has no `service` command; the probe is the cheapest version gate.
+  if "$candidate" service get port >/dev/null 2>&1; then
+    OPENCODE_BIN="$candidate"
+    break
+  fi
+done
+
+OPENCODE_SERVICE_CHANGED=0
+if [ -n "$OPENCODE_BIN" ]; then
+  for setting in "port 15001" "hostname 0.0.0.0"; do
+    key="${setting%% *}"
+    value="${setting#* }"
+    current="$("$OPENCODE_BIN" service get "$key" 2>/dev/null || true)"
+    if [ "$current" = "$value" ]; then
+      say "opencode: service $key already $value"
+    else
+      run "$OPENCODE_BIN" service set "$key" "$value"
+      OPENCODE_SERVICE_CHANGED=1
+    fi
+  done
+  if [ "$("$OPENCODE_BIN" service get disabled 2>/dev/null || true)" = "true" ]; then
+    run "$OPENCODE_BIN" service unset disabled
+    OPENCODE_SERVICE_CHANGED=1
+  fi
+else
+  say "opencode: v2 not found; after installing it run:"
+  say "  opencode service set port 15001"
+  say "  opencode service set hostname 0.0.0.0"
+fi
+
+# On macOS nothing restarts the server here. If an old explicit serve still
+# holds 15001, the managed service cannot bind until it stops. Warn instead of
+# killing it: it may be hosting live sessions.
+if [ "$(uname -s)" = "Darwin" ] && [ -n "$OPENCODE_BIN" ] && \
+  lsof -nP -iTCP:15001 -sTCP:LISTEN >/dev/null 2>&1; then
+  managed_url="$("$OPENCODE_BIN" service status 2>/dev/null || true)"
+  case "$managed_url" in
+    *:15001*) ;;
+    *) say "warn: :15001 is held by another process; stop the old explicit serve before running oc" ;;
+  esac
+fi
+
 if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/bin" "$HOME/.local/bin"
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
 
-  # Idempotent rerun: only reload/restart when a unit or binary link actually
-  # changed. A restart kills running TUI sessions, so never do it for nothing.
-  if [ "$LINK_FILES_CHANGED" -eq 1 ]; then
-    run systemctl --user daemon-reload 2>/dev/null || \
-      say "warn: systemctl --user unavailable; skipped daemon-reload"
+  # Idempotent rerun: only reload/restart when a unit, binary link, or service
+  # setting actually changed. A restart kills running TUI sessions, so never do
+  # it for nothing.
+  if [ "$LINK_FILES_CHANGED" -eq 1 ] || [ "$OPENCODE_SERVICE_CHANGED" -eq 1 ]; then
+    if [ "$LINK_FILES_CHANGED" -eq 1 ]; then
+      run systemctl --user daemon-reload 2>/dev/null || \
+        say "warn: systemctl --user unavailable; skipped daemon-reload"
+    fi
 
     opencode_unit="$HOME/.config/systemd/user/opencode-server.service"
-    if [ -e "$opencode_unit" ] && systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
+    if [ -e "$opencode_unit" ] && [ -n "$OPENCODE_BIN" ]; then
+      # Always-on is the Linux contract; enable so boot starts it even before a
+      # local client runs.
+      run systemctl --user enable opencode-server.service 2>/dev/null || \
+        say "warn: could not enable opencode-server.service"
       run systemctl --user restart opencode-server.service 2>/dev/null || \
-        say "warn: could not restart opencode-server.service (is opencode v2 installed?)"
+        say "warn: could not restart opencode-server.service"
     fi
   else
-    say "systemd units unchanged: no daemon-reload, no restart"
+    say "opencode service unchanged: no daemon-reload, no restart"
   fi
 
   # pnpm global-install policy. pnpm v11 resolves bare imports from a hoisted
@@ -330,7 +393,7 @@ else
 fi
 
 # Expose the shared server to the tailnet. Both platforms bind it to 0.0.0.0
-# (Linux systemd unit, macOS shell/shared/ai/oc.sh), so the tailnet reaches
+# (Linux systemd unit, macOS managed service), so the tailnet reaches
 # http://<magicdns>:15001 directly. A serve mapping for 15001 would contend
 # with that bind for the node's port, so any stale mapping from older installs
 # is removed (idempotent). HTTPS certs are only issued on 443/8443/10000, so
@@ -393,19 +456,10 @@ if [ -e "$DOTFILES/$SECRETS_PATH" ]; then
   run chmod 600 "$DOTFILES/$SECRETS_PATH"
 fi
 
-# 4b. Shared opencode server password. V2 servers require one; the login shell
-#     and the systemd unit both read this file, so a client can authenticate.
-#     Requires a non-empty value: an `OPENCODE_PASSWORD=` line from the example
-#     template must not satisfy the check.
+# 4b. opencode env file: ntfy settings only. The managed service owns its
+#     password in ~/.config/opencode/service.json; install.sh provisions only
+#     the port and hostname.
 OPENCODE_ENV="$DOTFILES/shell/shared/opencode.env"
-if grep -Eq '^OPENCODE_PASSWORD=.+' "$OPENCODE_ENV" 2>/dev/null; then
-  say "opencode: OPENCODE_PASSWORD present in $OPENCODE_ENV"
-elif [ "$DRY_RUN" -eq 1 ]; then
-  printf '[dry-run] generate OPENCODE_PASSWORD in %s\n' "$OPENCODE_ENV"
-else
-  ( umask 077; printf 'OPENCODE_PASSWORD=%s\n' "$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')" >> "$OPENCODE_ENV" )
-  say "opencode: generated OPENCODE_PASSWORD in $OPENCODE_ENV"
-fi
 if [ -e "$OPENCODE_ENV" ]; then
   run chmod 600 "$OPENCODE_ENV"
 fi
@@ -420,9 +474,12 @@ case "$(uname -s)" in
     say "      brew bundle install --file \"$DOTFILES/Brewfile\""
     say "  - opencode v2 (curl installer replaces the v1 ~/.opencode/bin binary):"
     say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
-    say "  - Shared server on :15001: the oc shell function starts it on demand,"
-    say "    bound to 0.0.0.0; tailnet clients reach it directly. Pair a phone"
-    say "    with oc-pair."
+    say "  - Shared server on :15001 is the managed background service, bound"
+    say "    to 0.0.0.0; tailnet clients reach it directly. Pair a phone with:"
+    say "      opencode pair"
+    say "  - If opencode v2 was not installed yet, provision the service after:"
+    say "      opencode service set port 15001"
+    say "      opencode service set hostname 0.0.0.0"
     say "  - hop (file transfers this Mac <-> g4): run ssh-copy-id afifs-macbook-pro"
     say "    from g4 once so g4 can push here; Mac -> g4 needs no keys (Tailscale SSH)."
     say "  - Reload your shell: source ~/.zshrc"
@@ -442,9 +499,14 @@ case "$(uname -s)" in
     say "      curl --proto '=https' --tlsv1.2 -fsSL https://opencode.ai/v2/install | bash"
     say "    If v1 was mise-managed, drop it so the v2 binary wins:"
     say "      mise uninstall opencode"
-    say "  - Shared server on :15001: the systemd unit starts it, bound to"
-    say "    0.0.0.0; tailnet clients reach http://<magicdns>:15001 directly."
-    say "    Pair a phone with oc-pair."
+    say "  - Shared server on :15001: the systemd unit runs"
+    say "    'opencode serve --service', reading port, hostname, and password from"
+    say "    ~/.config/opencode/service.json. Tailnet clients reach"
+    say "    http://<magicdns>:15001 directly. Pair a phone with:"
+    say "      opencode pair"
+    say "  - If opencode v2 was not installed yet, provision the service after:"
+    say "      opencode service set port 15001"
+    say "      opencode service set hostname 0.0.0.0"
     say "  - hop (file transfers g4 <-> Mac): one-time key install on the Mac,"
     say "      ssh-copy-id afifs-macbook-pro"
     say "    Mac -> g4 needs no keys (Tailscale SSH identity)."
@@ -465,7 +527,7 @@ case "$(uname -s)" in
     say "      herdr plugin install abrose/herdr-numbered-workspaces"
     say "      herdr integration install opencode"
     say "  - This installer reloads systemd and restarts opencode-server only when"
-    say "    a binary or unit link changed; an unchanged rerun leaves it running."
+    say "    a binary, unit link, or service setting changed."
     say "  - Mailpit (local email catcher for OpenCodeHub dev), then enable its unit:"
     say "      yay -S mailpit-bin"
     say "      systemctl --user enable --now mailpit.service"

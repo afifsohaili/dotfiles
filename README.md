@@ -168,14 +168,14 @@ does not need zsh at all.
 | `~/.agents/skills` | symlink to `$DOTFILES/agents/skills` (shared global skill store, managed by `npx skills add -g`; writes land in the repo) |
 | `~/.agents/.skill-lock.json` | symlink to `$DOTFILES/agents/.skill-lock.json` |
 | shell | `shell/{shared,mac,linux,zsh}/`; login shell's rc (`~/.zshrc` or `~/.bashrc`) gains `# dotfiles` + `source "$HOME/Projects/dotfiles/init.{zsh,bash}"` |
-| `bin/` | cross-platform scripts (`transcribe-youtube`, `oc-pair`) symlinked into `~/.local/bin` by `install.sh` on Linux and macOS |
+| `bin/` | cross-platform scripts (`transcribe-youtube`) symlinked into `~/.local/bin` by `install.sh` on Linux and macOS |
 | secrets | `shell/shared/secrets.sh` is gitignored; `install.sh` copies it from the tracked `shell/shared/secrets.example` and sets mode `0600` |
 | herdr plugins | not in the repo; reinstall with the `herdr plugin install` commands above |
 | opencode plugin deps | `config/opencode/package.json` is tracked; `node_modules` is not. Run `bun install` in `~/.config/opencode` after a fresh clone or config-tree move; `install.sh` does it when needed |
 | nvim under Omarchy | repo config replaces `omarchy-nvim`; re-link after Omarchy updates |
 | mailpit | `yay -S mailpit-bin`; `omarchy/systemd/mailpit.service` linked to `~/.config/systemd/user/`, enabled manually with `systemctl --user enable --now mailpit.service` |
 | ntfy | `yay -S ntfysh-bin` (binary `/usr/bin/ntfy`; AUR `ntfy` is a different project); `omarchy/systemd/ntfy.service` + `config/ntfy/server.yml`; loopback `:15002` exposed with `tailscale serve --bg --http=15002`; auth required |
-| shared server | both platforms bind `0.0.0.0:15001`; tailnet clients reach `http://<host>:15001` directly, no serve (`install.sh` removes any stale mapping for 15001) |
+| shared server | the managed background service owns `0.0.0.0:15001` on both platforms; `install.sh` provisions port and hostname in `~/.config/opencode/service.json`. Tailnet clients reach `http://<host>:15001` directly, no serve (`install.sh` removes any stale mapping for 15001) |
 | hop | `shell/shared/hop.sh`, auto-sourced on both platforms; `hop push`/`hop pull` over the tailnet. Mac->g4 rides Tailscale SSH identity; g4->Mac rides macOS Remote Login with `~/.ssh/id_ed25519` (`ssh-copy-id afifs-macbook-pro` once) |
 
 ## OpenCode v2
@@ -188,28 +188,41 @@ Omarchy-only MCP servers are injected by a Linux-gated plugin in
 `config/opencode/plugins/cua-driver.ts`, so the shared `opencode.json` stays
 Mac-clean and no platform-specific config file is needed.
 
-The shared server on port 15001 needs a password in V2. `shell/shared/opencode.sh`
-generates `OPENCODE_PASSWORD` into the gitignored `shell/shared/opencode.env`;
-the systemd unit reads the same file. Clients (`oc`) connect with
-`opencode --server http://127.0.0.1:15001`.
+The shared server on port 15001 is OpenCode's managed background service.
+`install.sh` provisions its port (`15001`) and hostname (`0.0.0.0`) in
+`~/.config/opencode/service.json`; `opencode serve --service` reads both. Each
+host generates its own service password there. Clients (`oc`) discover the
+registered service and start it on demand, so there is no `--server` flag and no
+shared `OPENCODE_PASSWORD`.
 
 Both platforms bind the server to `0.0.0.0`: the systemd unit on Linux, the
-`oc` shell function on macOS. Tailnet clients reach `http://<host>:15001`
-directly, so `oc-pair` links work as printed. `install.sh` removes any old
+managed service on macOS. Tailnet clients reach `http://<host>:15001` directly,
+so `opencode pair` links work as printed. `install.sh` removes any old
 `tailscale serve` mapping for 15001; it would contend with the bind for the
 node's port. HTTPS certs are only issued on `443`/`8443`/`10000`, and tailnet
 traffic is WireGuard-encrypted, so plain HTTP on 15001 is fine. A `0.0.0.0`
-bind is also reachable from the LAN; `OPENCODE_PASSWORD` gates it.
+bind is also reachable from the LAN; the service password gates it.
 
-Pair a phone or browser with `oc-pair` (`install.sh` links it into
-`~/.local/bin` on both Linux and macOS): it mints a one-time link and QR for
-the tailnet URL (`http://<host>:15001/auth/connect/<code>`). Links die in 5
-minutes and work once; the key the app receives lasts about 30 days.
-`opencode pair` cannot target the shared server — it always pairs the
-background service on a random loopback port — so `oc-pair` talks to 15001
-directly. The 15001 server must be running: the systemd unit on Linux, the
-`oc` shell function on macOS (`shell/shared/ai/oc.sh`), which starts it on
-demand.
+Pair a phone or browser with `opencode pair`: it mints a one-time link and QR
+for the reachable URLs (`http://<host>:15001/auth/connect/<code>`, plus LAN and
+loopback). Links die in 5 minutes and work once; the key the app receives lasts
+about 30 days. The 15001 server must be running: the systemd unit on Linux, the
+managed service on macOS (`oc` starts it on demand).
+
+If OpenCode v2 is installed after `install.sh`, provision the service once per
+machine:
+
+```sh
+opencode service set port 15001
+opencode service set hostname 0.0.0.0
+```
+
+On a machine upgrading from the old explicit server, stop that process once
+before the managed service can bind 15001:
+
+```sh
+pkill -f 'serve --port 15001'
+```
 
 `herdr integration install opencode` writes files into `~/.config/opencode`
 (`plugins/`, `herdr-opencode/`, `cli.json` entry); those are gitignored. Reinstall

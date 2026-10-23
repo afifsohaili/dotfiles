@@ -1,12 +1,9 @@
 #!/bin/bash
 
-# Open an interactive opencode TUI attached to the shared server on 15001,
-# starting it first if it is not already running.
-
-PORT=15001
-# All interfaces, so tailnet clients reach http://<magicdns>:15001 directly.
-# Never map 15001 with `tailscale serve`; it contends with this bind.
-HOST=0.0.0.0
+# Open an interactive opencode TUI against the shared managed service on :15001.
+# Port, hostname, and password live in ~/.config/opencode/service.json;
+# install.sh provisions 15001 / 0.0.0.0. The client discovers the registered
+# service and starts it on demand, so nothing here binds a port.
 
 # Target directory precedence:
 #   1. an explicit argument,
@@ -39,9 +36,9 @@ if [[ -z $OPENCODE_BIN ]]; then
   exit 1
 fi
 
-# The shared password (and ntfy settings) live in the gitignored env file.
-# Login shells source it via shell/shared/opencode.sh; non-login launches
-# must load it here or the client cannot authenticate to the shared server.
+# The ntfy settings live in the gitignored env file. Login shells source it via
+# shell/shared/opencode.sh; non-login launches must load it here so a service
+# started by this client inherits them.
 OPENCODE_ENV_FILE="${OPENCODE_ENV_FILE:-$HOME/Projects/dotfiles/shell/shared/opencode.env}"
 if [[ -r $OPENCODE_ENV_FILE ]]; then
   set -a
@@ -50,29 +47,11 @@ if [[ -r $OPENCODE_ENV_FILE ]]; then
   set +a
 fi
 
-listening() {
-  ss -ltn "sport = :$PORT" 2>/dev/null | grep -q LISTEN
-}
-
-if ! listening; then
-  if systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
-    systemctl --user start opencode-server.service
-  else
-    setsid nohup "$OPENCODE_BIN" serve --port "$PORT" --hostname "$HOST" >/dev/null 2>&1 &
-  fi
-
-  for _ in {1..60}; do
-    listening && break
-    sleep 0.5
-  done
+# The unit is the always-on launcher. Best effort: when it is not enabled the
+# client still starts the managed service on demand.
+if systemctl --user is-enabled opencode-server.service >/dev/null 2>&1; then
+  systemctl --user start opencode-server.service >/dev/null 2>&1 || true
 fi
 
-if ! listening; then
-  echo "opencode server on :$PORT did not come up" >&2
-  exit 1
-fi
-
-# V2: `opencode attach` is gone. The client takes the directory positionally
-# and connects with --server. OPENCODE_PASSWORD comes from the env file loaded
-# above and matches the service's EnvironmentFile.
-exec "$OPENCODE_BIN" --server "http://127.0.0.1:$PORT" --continue "$DIR"
+# V2: the client takes the directory positionally and discovers the service.
+exec "$OPENCODE_BIN" --continue "$DIR"
