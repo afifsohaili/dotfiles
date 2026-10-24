@@ -199,7 +199,7 @@ shared `OPENCODE_PASSWORD`.
 config is not enough: systemd serves a cached copy of the unit until
 `daemon-reload` runs, so a restart alone can relaunch the old argv, and an old
 explicit `serve --port 15001` keeps the port. When `opencode service status`
-reports anything other than `:15001`, the installer reloads and restarts the
+reports an address other than `0.0.0.0:15001`, the installer reloads and restarts the
 service on Linux, or restarts the managed service on macOS.
 
 Both platforms bind the server to `0.0.0.0`: the systemd unit on Linux, the

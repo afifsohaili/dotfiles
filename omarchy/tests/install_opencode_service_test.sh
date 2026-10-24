@@ -88,7 +88,7 @@ run_install Linux
 assert_status 0 "$status" "dry-run exits 0"
 assert_contains "$out" "service set port 15001" "writes port 15001 when unset"
 assert_contains "$out" "service set hostname 0.0.0.0" "writes hostname when unset"
-assert_contains "$out" "service is http://127.0.0.1:49374, expected :15001; restarting" \
+assert_contains "$out" "service is http://127.0.0.1:49374, expected 0.0.0.0:15001; restarting" \
   "reports drift against the running port"
 assert_contains "$out" "systemctl --user daemon-reload" "reloads systemd before restart"
 assert_contains "$out" "systemctl --user restart opencode-server.service" "restarts the unit"
@@ -100,13 +100,21 @@ printf 'http://0.0.0.0:15001' >"$state/status"
 run_install Linux
 assert_status 0 "$status" "healthy dry-run exits 0"
 assert_contains "$out" "service port already 15001" "leaves a correct port alone"
-assert_not_contains "$out" "expected :15001; restarting" "no drift when the service is on 15001"
+assert_not_contains "$out" "expected 0.0.0.0:15001; restarting" "no drift when the service is on 0.0.0.0:15001"
+
+# --- 2b. right port, loopback bind: drift -------------------------------
+printf 'http://127.0.0.1:15001' >"$state/status"
+run_install Linux
+assert_contains "$out" "service is http://127.0.0.1:15001, expected 0.0.0.0:15001; restarting" \
+  "a loopback bind on the right port is still drift"
+assert_contains "$out" "$tmp/opencode service stop" "drops a client-started service before restarting"
 
 # --- 3. macOS restarts the managed service, not a unit -------------------
 printf 'http://127.0.0.1:49374' >"$state/status"
 run_install Darwin
 assert_status 0 "$status" "macOS dry-run exits 0"
-assert_contains "$out" "service is http://127.0.0.1:49374, expected :15001; restarting" \
+assert_contains "$out" "service is http://127.0.0.1:49374, expected 0.0.0.0:15001; restarting" \
   "macOS reports drift"
-assert_contains "$out" "$tmp/opencode service restart" "macOS restarts the managed service"
+assert_contains "$out" "$tmp/opencode service stop" "macOS stops the managed service"
+assert_contains "$out" "$tmp/opencode service start" "macOS starts the managed service"
 assert_not_contains "$out" "systemctl" "macOS never calls systemctl"

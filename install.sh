@@ -272,6 +272,7 @@ fi
 
 OPENCODE_SERVICE_CHANGED=0
 if [ -n "$OPENCODE_BIN" ]; then
+  pending=()
   for setting in "port $OPENCODE_SERVICE_PORT" "hostname $OPENCODE_SERVICE_HOSTNAME"; do
     key="${setting%% *}"
     value="${setting#* }"
@@ -279,12 +280,24 @@ if [ -n "$OPENCODE_BIN" ]; then
     if [ "$current" = "$value" ]; then
       say "opencode: service $key already $value"
     else
-      run "$OPENCODE_BIN" service set "$key" "$value"
-      OPENCODE_SERVICE_CHANGED=1
+      pending+=("$key $value")
     fi
   done
   if [ "$("$OPENCODE_BIN" service get disabled 2>/dev/null || true)" = "true" ]; then
-    run "$OPENCODE_BIN" service unset disabled
+    pending+=("disabled")
+  fi
+  if [ "${#pending[@]}" -gt 0 ]; then
+    # Stop before writing. Each `service set` restarts the service, and a client
+    # can win that race and bind a half-written config: on 2026-10-24 the port
+    # landed, the hostname did not, and the server stayed on 127.0.0.1.
+    run "$OPENCODE_BIN" service stop
+    for setting in "${pending[@]}"; do
+      if [ "$setting" = "disabled" ]; then
+        run "$OPENCODE_BIN" service unset disabled
+      else
+        run "$OPENCODE_BIN" service set "${setting%% *}" "${setting#* }"
+      fi
+    done
     OPENCODE_SERVICE_CHANGED=1
   fi
 else
@@ -300,18 +313,21 @@ OPENCODE_SERVICE_DRIFT=0
 OPENCODE_SERVICE_URL=""
 if [ -n "$OPENCODE_BIN" ]; then
   OPENCODE_SERVICE_URL="$("$OPENCODE_BIN" service status 2>/dev/null | head -1 | sed 's:/*$::')"
+  # Compare the host too, not just the port: a service bound to 127.0.0.1 still
+  # reports :15001, and tailnet clients cannot reach it.
   case "$OPENCODE_SERVICE_URL" in
-    *":$OPENCODE_SERVICE_PORT") ;;
+    *"://$OPENCODE_SERVICE_HOSTNAME:$OPENCODE_SERVICE_PORT") ;;
     *) OPENCODE_SERVICE_DRIFT=1 ;;
   esac
 fi
 
 # macOS has no unit to reload; restart the managed service when it is not on the
-# provisioned port. If a foreign listener still holds the port, say so rather
+# provisioned address. If a foreign listener still holds the port, say so rather
 # than killing a process that may host live sessions.
 if [ "$(uname -s)" = "Darwin" ] && [ -n "$OPENCODE_BIN" ] && [ "$OPENCODE_SERVICE_DRIFT" -eq 1 ]; then
-  say "opencode: service is ${OPENCODE_SERVICE_URL:-not running}, expected :$OPENCODE_SERVICE_PORT; restarting"
-  run "$OPENCODE_BIN" service restart
+  say "opencode: service is ${OPENCODE_SERVICE_URL:-not running}, expected $OPENCODE_SERVICE_HOSTNAME:$OPENCODE_SERVICE_PORT; restarting"
+  run "$OPENCODE_BIN" service stop
+  run "$OPENCODE_BIN" service start
   if [ "$DRY_RUN" -ne 1 ]; then
     sleep 1
     restarted_url="$("$OPENCODE_BIN" service status 2>/dev/null | head -1 | sed 's:/*$::')"
@@ -337,7 +353,10 @@ if [ "$(uname -s)" = "Linux" ]; then
   # the unit until then, so a restart alone can relaunch the old argv.
   if [ "$LINK_FILES_CHANGED" -eq 1 ] || [ "$OPENCODE_SERVICE_CHANGED" -eq 1 ] || [ "$OPENCODE_SERVICE_DRIFT" -eq 1 ]; then
     if [ "$OPENCODE_SERVICE_DRIFT" -eq 1 ]; then
-      say "opencode: service is ${OPENCODE_SERVICE_URL:-not running}, expected :$OPENCODE_SERVICE_PORT; restarting"
+      say "opencode: service is ${OPENCODE_SERVICE_URL:-not running}, expected $OPENCODE_SERVICE_HOSTNAME:$OPENCODE_SERVICE_PORT; restarting"
+      # The unit delegates to any registered service and exits 0, so a
+      # client-started instance would keep the port and the unit would stay dead.
+      run "$OPENCODE_BIN" service stop
     fi
     run systemctl --user daemon-reload 2>/dev/null || \
       say "warn: systemctl --user unavailable; skipped daemon-reload"
@@ -352,7 +371,7 @@ if [ "$(uname -s)" = "Linux" ]; then
         say "warn: could not restart opencode-server.service"
     fi
   else
-    say "opencode service on :$OPENCODE_SERVICE_PORT: no reload, no restart"
+    say "opencode service on $OPENCODE_SERVICE_HOSTNAME:$OPENCODE_SERVICE_PORT: no reload, no restart"
   fi
 
   # pnpm global-install policy. pnpm v11 resolves bare imports from a hoisted
@@ -558,7 +577,7 @@ case "$(uname -s)" in
     say "      herdr integration install opencode"
     say "  - This installer reloads systemd and restarts opencode-server only when"
     say "    a binary, unit link, or service setting changed, or the running"
-    say "    service is not on :$OPENCODE_SERVICE_PORT."
+    say "    service is not on $OPENCODE_SERVICE_HOSTNAME:$OPENCODE_SERVICE_PORT."
     say "  - Mailpit (local email catcher for OpenCodeHub dev), then enable its unit:"
     say "      yay -S mailpit-bin"
     say "      systemctl --user enable --now mailpit.service"
