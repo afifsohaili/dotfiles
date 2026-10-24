@@ -195,6 +195,13 @@ host generates its own service password there. Clients (`oc`) discover the
 registered service and start it on demand, so there is no `--server` flag and no
 shared `OPENCODE_PASSWORD`.
 
+`install.sh` also compares what is *running* to what is provisioned. Correct
+config is not enough: systemd serves a cached copy of the unit until
+`daemon-reload` runs, so a restart alone can relaunch the old argv, and an old
+explicit `serve --port 15001` keeps the port. When `opencode service status`
+reports anything other than `:15001`, the installer reloads and restarts the
+service on Linux, or restarts the managed service on macOS.
+
 Both platforms bind the server to `0.0.0.0`: the systemd unit on Linux, the
 managed service on macOS. Tailnet clients reach `http://<host>:15001` directly,
 so `opencode pair` links work as printed. `install.sh` removes any old
@@ -210,15 +217,16 @@ about 30 days. The 15001 server must be running: the systemd unit on Linux, the
 managed service on macOS (`oc` starts it on demand).
 
 If OpenCode v2 is installed after `install.sh`, provision the service once per
-machine:
+machine (or re-run `install.sh`):
 
 ```sh
 opencode service set port 15001
 opencode service set hostname 0.0.0.0
 ```
 
-On a machine upgrading from the old explicit server, stop that process once
-before the managed service can bind 15001:
+On a machine upgrading from the old explicit server, the installer restarts the
+unit and that old process dies with it. A foreign listener can still hold 15001;
+`install.sh` warns when it does, and the fix is to stop it once:
 
 ```sh
 pkill -f 'serve --port 15001'

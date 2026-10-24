@@ -23,6 +23,10 @@ done
 HERDR_INSTALL_URL="https://herdr.dev/install.sh"
 OPENCODE_DOWNLOAD_URL="https://opencode.ai/v2"
 SECRETS_PATH="shell/shared/secrets.sh"
+# The managed service owns this port on both platforms. A running instance that
+# reports anything else means provisioning drifted, not that the config is wrong.
+OPENCODE_SERVICE_PORT=15001
+OPENCODE_SERVICE_HOSTNAME=0.0.0.0
 
 # Which rc file gets the shim. The login shell decides; overridable for testing
 # with DOTFILES_SHELL_RC=~/.some-rc or DOTFILES_SKIP_SHELL_RC=1.
@@ -254,19 +258,21 @@ fi
 #     ~/.config/opencode/service.json and are machine state, so provision them
 #     here. `service set` stops the service on every write: only write when the
 #     value differs, or an unchanged rerun would kill running sessions.
-OPENCODE_BIN=""
-for candidate in "$HOME/.opencode/bin/opencode" "$(command -v opencode 2>/dev/null || true)" /usr/bin/opencode "$HOME/.local/bin/opencode"; do
-  [ -n "$candidate" ] && [ -x "$candidate" ] || continue
-  # v1 has no `service` command; the probe is the cheapest version gate.
-  if "$candidate" service get port >/dev/null 2>&1; then
-    OPENCODE_BIN="$candidate"
-    break
-  fi
-done
+OPENCODE_BIN="${OPENCODE_BIN:-}"
+if [ -z "$OPENCODE_BIN" ]; then
+  for candidate in "$HOME/.opencode/bin/opencode" "$(command -v opencode 2>/dev/null || true)" /usr/bin/opencode "$HOME/.local/bin/opencode"; do
+    [ -n "$candidate" ] && [ -x "$candidate" ] || continue
+    # v1 has no `service` command; the probe is the cheapest version gate.
+    if "$candidate" service get port >/dev/null 2>&1; then
+      OPENCODE_BIN="$candidate"
+      break
+    fi
+  done
+fi
 
 OPENCODE_SERVICE_CHANGED=0
 if [ -n "$OPENCODE_BIN" ]; then
-  for setting in "port 15001" "hostname 0.0.0.0"; do
+  for setting in "port $OPENCODE_SERVICE_PORT" "hostname $OPENCODE_SERVICE_HOSTNAME"; do
     key="${setting%% *}"
     value="${setting#* }"
     current="$("$OPENCODE_BIN" service get "$key" 2>/dev/null || true)"
@@ -283,34 +289,58 @@ if [ -n "$OPENCODE_BIN" ]; then
   fi
 else
   say "opencode: v2 not found; after installing it run:"
-  say "  opencode service set port 15001"
-  say "  opencode service set hostname 0.0.0.0"
+  say "  opencode service set port $OPENCODE_SERVICE_PORT"
+  say "  opencode service set hostname $OPENCODE_SERVICE_HOSTNAME"
 fi
 
-# On macOS nothing restarts the server here. If an old explicit serve still
-# holds 15001, the managed service cannot bind until it stops. Warn instead of
-# killing it: it may be hosting live sessions.
-if [ "$(uname -s)" = "Darwin" ] && [ -n "$OPENCODE_BIN" ] && \
-  lsof -nP -iTCP:15001 -sTCP:LISTEN >/dev/null 2>&1; then
-  managed_url="$("$OPENCODE_BIN" service status 2>/dev/null || true)"
-  case "$managed_url" in
-    *:15001*) ;;
-    *) say "warn: :15001 is held by another process; stop the old explicit serve before running oc" ;;
+# Config can be correct while the process is not: a unit restarted without
+# daemon-reload keeps its old argv, and an old explicit `serve --port 15001`
+# keeps the port. Compare what is running against what was provisioned.
+OPENCODE_SERVICE_DRIFT=0
+OPENCODE_SERVICE_URL=""
+if [ -n "$OPENCODE_BIN" ]; then
+  OPENCODE_SERVICE_URL="$("$OPENCODE_BIN" service status 2>/dev/null | head -1 | sed 's:/*$::')"
+  case "$OPENCODE_SERVICE_URL" in
+    *":$OPENCODE_SERVICE_PORT") ;;
+    *) OPENCODE_SERVICE_DRIFT=1 ;;
   esac
+fi
+
+# macOS has no unit to reload; restart the managed service when it is not on the
+# provisioned port. If a foreign listener still holds the port, say so rather
+# than killing a process that may host live sessions.
+if [ "$(uname -s)" = "Darwin" ] && [ -n "$OPENCODE_BIN" ] && [ "$OPENCODE_SERVICE_DRIFT" -eq 1 ]; then
+  say "opencode: service is ${OPENCODE_SERVICE_URL:-not running}, expected :$OPENCODE_SERVICE_PORT; restarting"
+  run "$OPENCODE_BIN" service restart
+  if [ "$DRY_RUN" -ne 1 ]; then
+    sleep 1
+    restarted_url="$("$OPENCODE_BIN" service status 2>/dev/null | head -1 | sed 's:/*$::')"
+    case "$restarted_url" in
+      *":$OPENCODE_SERVICE_PORT") say "opencode: service on $restarted_url" ;;
+      *)
+        if lsof -nP -iTCP:"$OPENCODE_SERVICE_PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+          say "warn: :$OPENCODE_SERVICE_PORT is held by another process; the managed service stayed on ${restarted_url:-an unknown port}"
+          say "  stop the old explicit serve once: pkill -f 'serve --port $OPENCODE_SERVICE_PORT'"
+        fi
+        ;;
+    esac
+  fi
 fi
 
 if [ "$(uname -s)" = "Linux" ]; then
   link_files "$DOTFILES/omarchy/bin" "$HOME/.local/bin"
   link_files "$DOTFILES/omarchy/systemd" "$HOME/.config/systemd/user"
 
-  # Idempotent rerun: only reload/restart when a unit, binary link, or service
-  # setting actually changed. A restart kills running TUI sessions, so never do
-  # it for nothing.
-  if [ "$LINK_FILES_CHANGED" -eq 1 ] || [ "$OPENCODE_SERVICE_CHANGED" -eq 1 ]; then
-    if [ "$LINK_FILES_CHANGED" -eq 1 ]; then
-      run systemctl --user daemon-reload 2>/dev/null || \
-        say "warn: systemctl --user unavailable; skipped daemon-reload"
+  # Idempotent rerun: act only when a link, a setting, or the running port
+  # changed. A restart kills running TUI sessions, so never do it for nothing.
+  # Every restart is preceded by daemon-reload: systemd serves a cached copy of
+  # the unit until then, so a restart alone can relaunch the old argv.
+  if [ "$LINK_FILES_CHANGED" -eq 1 ] || [ "$OPENCODE_SERVICE_CHANGED" -eq 1 ] || [ "$OPENCODE_SERVICE_DRIFT" -eq 1 ]; then
+    if [ "$OPENCODE_SERVICE_DRIFT" -eq 1 ]; then
+      say "opencode: service is ${OPENCODE_SERVICE_URL:-not running}, expected :$OPENCODE_SERVICE_PORT; restarting"
     fi
+    run systemctl --user daemon-reload 2>/dev/null || \
+      say "warn: systemctl --user unavailable; skipped daemon-reload"
 
     opencode_unit="$HOME/.config/systemd/user/opencode-server.service"
     if [ -e "$opencode_unit" ] && [ -n "$OPENCODE_BIN" ]; then
@@ -322,7 +352,7 @@ if [ "$(uname -s)" = "Linux" ]; then
         say "warn: could not restart opencode-server.service"
     fi
   else
-    say "opencode service unchanged: no daemon-reload, no restart"
+    say "opencode service on :$OPENCODE_SERVICE_PORT: no reload, no restart"
   fi
 
   # pnpm global-install policy. pnpm v11 resolves bare imports from a hoisted
@@ -527,7 +557,8 @@ case "$(uname -s)" in
     say "      herdr plugin install abrose/herdr-numbered-workspaces"
     say "      herdr integration install opencode"
     say "  - This installer reloads systemd and restarts opencode-server only when"
-    say "    a binary, unit link, or service setting changed."
+    say "    a binary, unit link, or service setting changed, or the running"
+    say "    service is not on :$OPENCODE_SERVICE_PORT."
     say "  - Mailpit (local email catcher for OpenCodeHub dev), then enable its unit:"
     say "      yay -S mailpit-bin"
     say "      systemctl --user enable --now mailpit.service"
