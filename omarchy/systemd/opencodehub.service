@@ -8,6 +8,8 @@ Wants=network-online.target opencode-server.service
 Type=simple
 WorkingDirectory=%h/Projects/opencodehub
 EnvironmentFile=-%h/Projects/opencodehub/apps/web/.env.local
+# opencode 2 requires basic auth; OPENCODE_PASSWORD lives here (single source).
+EnvironmentFile=-%h/Projects/dotfiles/shell/shared/opencode.env
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=15000
