@@ -139,6 +139,7 @@ function M.pick_target(on_done)
 end
 
 local function close_float()
+  vim.cmd.stopinsert()
   if state.win and vim.api.nvim_win_is_valid(state.win) then
     vim.api.nvim_win_close(state.win, true)
   end
