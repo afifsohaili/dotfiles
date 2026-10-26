@@ -1,5 +1,8 @@
 local M = {}
 
+-- opencode's prompt.queue command is bound to <leader>return, leader is ctrl+x.
+local OPENCODE_QUEUE_KEYS = { "ctrl+x", "enter" }
+
 local state = {
   target_pane = nil,
   buf = nil,
@@ -65,17 +68,17 @@ local function list_panes()
   return panes
 end
 
-local function is_pane_alive(pane_id)
+local function find_pane(pane_id)
   local result = run_herdr({ "herdr", "pane", "list" })
   if not result or not result.panes then
-    return false
+    return nil
   end
   for _, pane in ipairs(result.panes) do
     if pane.pane_id == pane_id then
-      return true
+      return pane
     end
   end
-  return false
+  return nil
 end
 
 local function get_relative_path()
@@ -147,15 +150,41 @@ local function close_float()
 end
 
 local function send_text(text)
-  if not state.target_pane or not is_pane_alive(state.target_pane) then
+  if not state.target_pane then
+    return
+  end
+
+  local pane = find_pane(state.target_pane)
+  if not pane then
     state.target_pane = nil
     vim.notify("Target pane closed, please pick a new one", vim.log.levels.WARN)
+    return
+  end
+
+  if pane.agent_status == "blocked" then
+    vim.notify("Target pane is waiting on a prompt, answer it in the pane first", vim.log.levels.WARN)
     return
   end
 
   vim.fn.system({ "herdr", "pane", "send-text", state.target_pane, text })
   if vim.v.shell_error ~= 0 then
     vim.notify("Failed to send text to herdr pane", vim.log.levels.ERROR)
+    return
+  end
+
+  local busy = pane.agent_status == "working" or pane.agent_status == "unknown"
+  vim.wait(80)
+
+  local keys = { "herdr", "pane", "send-keys", state.target_pane }
+  if busy then
+    vim.list_extend(keys, OPENCODE_QUEUE_KEYS)
+  else
+    table.insert(keys, "enter")
+  end
+
+  vim.fn.system(keys)
+  if vim.v.shell_error ~= 0 then
+    vim.notify("Failed to submit prompt in herdr pane", vim.log.levels.ERROR)
   end
 end
 
@@ -236,7 +265,7 @@ function M.send()
     return
   end
 
-  if not state.target_pane or not is_pane_alive(state.target_pane) then
+  if not state.target_pane or not find_pane(state.target_pane) then
     state.target_pane = nil
     M.pick_target(function()
       M.send()
