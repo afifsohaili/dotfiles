@@ -30,7 +30,7 @@
   },
   "attention": {
     "notifications": true,
-    "sound": true
+    "sound": false
   },
   "plugins": [
     "./plugins/ntfy",
