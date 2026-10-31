@@ -167,6 +167,7 @@ does not need zsh at all.
 | `~/.config/nvim` | symlink to `$DOTFILES/config/nvim` |
 | `~/.agents/skills` | symlink to `$DOTFILES/agents/skills` (shared global skill store, managed by `npx skills add -g`; writes land in the repo) |
 | `~/.agents/.skill-lock.json` | symlink to `$DOTFILES/agents/.skill-lock.json` |
+| `~/.agents/marketing-skills` | symlink to `$DOTFILES/agents/marketing-skills` (submodule `coreyhaines31/marketingskills`; playbooks read on demand by the `marketing` router skill) |
 | shell | `shell/{shared,mac,linux,zsh}/`; login shell's rc (`~/.zshrc` or `~/.bashrc`) gains `# dotfiles` + `source "$HOME/Projects/dotfiles/init.{zsh,bash}"` |
 | `bin/` | cross-platform scripts (`transcribe-youtube`) symlinked into `~/.local/bin` by `install.sh` on Linux and macOS |
 | secrets | `shell/shared/secrets.sh` is gitignored; `install.sh` copies it from the tracked `shell/shared/secrets.example` and sets mode `0600` |

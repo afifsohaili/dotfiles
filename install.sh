@@ -104,14 +104,15 @@ done
 
 # 1b. ~/.agents links. This directory is the shared global skill store for many
 #     agents (~10 via `npx skills`), and it is NOT under ~/.config. The repo
-#     `agents/` slice is canonical; symlink the two paths `npx skills` manages
-#     (the `skills` tree and its lock) back into it. Anything else in ~/.agents
-#     stays untracked.
+#     `agents/` slice is canonical; symlink the paths `npx skills` manages (the
+#     `skills` tree and its lock) back into it, plus `marketing-skills`, the
+#     submodule the `marketing` router skill reads playbooks from. Anything else
+#     in ~/.agents stays untracked.
 if [ ! -d "$HOME/.agents" ]; then
   run mkdir -p "$HOME/.agents"
 fi
 
-for rel in "skills" ".skill-lock.json"; do
+for rel in "skills" ".skill-lock.json" "marketing-skills"; do
   src="$DOTFILES/agents/$rel"
   dest="$HOME/.agents/$rel"
 

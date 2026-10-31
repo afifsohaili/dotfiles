@@ -5,3 +5,6 @@
 [submodule "tmux-resurrect"]
     path = tmux-resurrect
     url = https://github.com/tmux-plugins/tmux-resurrect
+[submodule "agents/marketing-skills"]
+	path = agents/marketing-skills
+	url = https://github.com/coreyhaines31/marketingskills.git
