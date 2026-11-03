@@ -164,17 +164,47 @@ After:
 - Problem statement is specific to the advisor's day: note taking, missed financial details, manual CRM entry.
 - Leads with concrete capabilities: financial fact capture, follow-up emails, CRM and task manager integrations.
 
-## The pattern across all of them
+## The copy teardown
 
-Every after page does the same five things:
+Every after page does the same five things: narrows to one buyer and one workflow, names the category, states the problem as a scene from that buyer's day, puts differentiation above the outcome, and shows the mechanism instead of listing features. Every before page fails at least two.
 
-1. Narrows from an industry or "anyone" to one buyer doing one workflow.
-2. Names the product category in plain words.
-3. States the problem as a scene from that buyer's day.
-4. Puts a concrete differentiator above the outcome.
-5. Shows the mechanism instead of listing features.
+The recurring moves:
 
-Every before page fails at least two of the five.
+### Headline formulas
+
+| Formula | Shipped example | Company |
+| --- | --- | --- |
+| The [category] made for [buyer] | "The Meeting Assistant made for Financial Advisors" | Zocks |
+| The only [category] that [differentiator] | "The only cold outreach tool that helps you reach inboxes and get replies" | Lemlist |
+| Get the [category] that [outcome] | "Get the email app that keeps deals moving" | Superhuman |
+| The [category] [buyer] graduate to | "The subscription platform top Shopify brands graduate to" | Skio |
+| Build your [category] at [speed] | "Build your Enterprise CRM at AI Speed" | Twenty |
+| Don't [painful behavior]. [New outcome]. | "Don't beg for case studies. Get customer proof at scale." | UserEvidence |
+| [Old belief] is dead. [Object] is the problem. | "Outbound isn't dead. Your lead list is." | Tamtam |
+| Everything you need to [job] | "Everything You Need To Manage Live Customer Training" | Administrate |
+
+Before headlines failed the same way: metaphor, superlative, or generic negative. "Capture data that matters." "Turn Strangers into Customers." "Revolutionary AI email." Only Twenty named a category; none named a buyer and a workflow.
+
+### The page
+
+- **Subhead = mechanism.** Three workflow verbs plus the outcome. "Build your lead list, write and personalize at scale, and send cold emails that actually get customers."
+- **Problem block at section three.** Three pains, each mapping one-to-one to the next three capabilities. Headings are full sentences: "Deals die in your reps' cluttered inboxes."
+- **Features become a numbered workflow.** Three or four steps, verb-first: list → write → deliver; plan → schedule → communicate → handle issues; surface → research → find → recommend.
+- **Proof moves into the first two screens.** A buyer-specific logo strip, a three-number band, and one named human with a role and a number. Testimonial walls become one hero quote.
+- **CTA discipline.** One primary verb ("Sign up", "Get a demo", "Launch Run") and one human-help secondary ("Talk to Sales", "Contact us"). Repeat them. No waitlist survives.
+- **Section order.** Hero → logos → problem → bridge → 3–4 steps with product UI → proof → use cases, integrations, security → pricing, FAQ → final CTA restating the H1.
+- **Cut inventory for second audiences.** API and SDK buyers, partners, community, enterprise, extra modules. Keep the logo wall, product UI, pricing, and FAQ.
+- **Length is not the tell.** Superhuman shrank 32%, Lemlist 16%, Zocks 13%, Tamtam 18%. Skio grew 37%, UserEvidence 19%, Administrate 8%, Twenty 5%. The tell is the ratio of argument to inventory.
+
+### Language
+
+- "Your client," "your reps," "your CRM" over "our platform."
+- "Without [friction]" and "so [outcome]" to connect mechanism to benefit.
+- "Stop [behavior]" to name what the buyer should abandon.
+- Colloquial villains beat brand language: "garbage list," "Franken-stack," "glorified stenographer," "10 year old tech."
+- Specificity beats polish. "Modern subscriptions brands" survives on a live page. Do not sand off the meaning while fixing the grammar.
+
+Not every winner follows every rule. Administrate names the job, not the category. UserEvidence names the pain. Tamtam names the object. The question is what this buyer buys, not which formula to obey.
 
 ## Before smells
 

@@ -124,12 +124,18 @@ Patterns that do the work:
 | Contrast | [Product] on, [alternative] off | "Loom on. Meetings off." |
 | Category + customer | The [category] for [workflow] | "The meeting assistant for financial advisors." |
 | Category + binary | The [category] that [binary difference] | "The search engine that never tracks you." |
+| Only | The only [category] that [differentiator] | "The only cold outreach tool that helps you reach inboxes and get replies." |
+| Prohibition | Don't [behavior]. [New outcome]. | "Don't beg for case studies. Get customer proof at scale." |
 
 Then one line with the mechanism and a real number if you have one. Loom: "Record quick videos to update your team and cut down meetings by 29%."
+
+The headline is the claim. The subhead is the mechanism: three workflow verbs and the outcome.
 
 ### Problem
 
 Give the problem its own block. Describe the workflow as it runs today, in the buyer's words, and name the cost. This is the setup that makes the solution legible.
+
+Three pains, each mapping to one capability below. If a pain has no matching capability, cut it.
 
 ### Solution intro
 
@@ -209,4 +215,4 @@ Ask only for what you cannot infer: what the buyer does today, what they complai
 
 ## Reference
 
-`references/examples.md` — the Loom walkthrough, repositioning cases, category trade-offs, and real before/after deltas from FletchPMM case studies.
+`references/examples.md` — the Loom walkthrough, headline formulas, page patterns, repositioning cases, category trade-offs, and real before/after deltas from FletchPMM case studies.
