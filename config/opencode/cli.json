@@ -27,7 +27,8 @@
     "image_preview": true,
     "permissions": "autoaccept",
     "thinking": "hide",
-    "verbosity": "high"
+    "new_location": "launch",
+    "verbosity": "medium"
   },
   "attention": {
     "notifications": true,
