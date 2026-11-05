@@ -25,8 +25,9 @@
   "session": {
     "tps": true,
     "image_preview": true,
-    "permissions": "prompt",
-    "thinking": "hide"
+    "permissions": "autoaccept",
+    "thinking": "hide",
+    "verbosity": "high"
   },
   "attention": {
     "notifications": true,
