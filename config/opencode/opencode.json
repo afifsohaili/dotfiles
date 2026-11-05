@@ -24,6 +24,9 @@
   },
   "default_agent": "ollama-dsv4f",
   "experimental": {
+    "image_generate": {
+      "model": "opencode/gpt-image-2.5-sunburst"
+    },
     "subagent_depth": 2,
     "policies": [
       {
