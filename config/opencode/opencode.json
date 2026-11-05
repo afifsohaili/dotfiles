@@ -382,7 +382,9 @@
       "resource": "pkexec *"
     }
   ],
-  "plugins": [],
+  "plugins": [
+    "@slkiser/opencode-quota"
+  ],
   "references": {
     "dotfiles": {
       "description": "Use for personal shell, editor, and tool configuration conventions",
