@@ -397,6 +397,14 @@
     "projects": {
       "description": "Use for personal projects in ~/Projects",
       "path": "~/Projects"
+    },
+    "projexn": {
+      "description": "Use for the Projexn platform monorepo (apps, backend, billing, desktop)",
+      "path": "~/Tiga/projexn"
+    },
+    "projexn-plans": {
+      "description": "Use for Projexn plans and notes (repo `plans/` symlink target)",
+      "path": "~/Projects/aso-notes/notes/projexn"
     }
   },
   "websearch": true
