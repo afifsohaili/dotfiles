@@ -18,3 +18,7 @@ case "$(uname -s)" in
     done
     ;;
 esac
+
+for config_file in "$DOTFILES"/shell/bash/completions/*.bash; do
+  [ -r "$config_file" ] && source "$config_file"
+done
