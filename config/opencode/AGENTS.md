@@ -126,7 +126,7 @@ Consolidated from the former `SOUL.md` (working philosophy), `TECHNICAL.md` (sta
 
 - Gather data, don't deduce. Rather than trying to deduce what's wrong from the code, print console.log/debug statements everywhere relevant and see the values at runtime, then adjust.
 - After TypeScript changes, run the package's `typecheck` (or `tsc`) — non-negotiable.
-- Verify UI behavior in a real browser via MCP (Playwriter, Agent WebBridge), not by reading code.
+- Verify UI behavior in a real browser via browse MCP (the user's Edge), not by reading code.
 
 ## Security and secrets
 
