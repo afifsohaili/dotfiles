@@ -36,7 +36,7 @@ Consolidated from the former `SOUL.md` (working philosophy), `TECHNICAL.md` (sta
 ## Workflow and planning artifacts
 
 - `/justshow`: show options and which parts change, run the user through each option with the question tool. No implementation until they pick.
-- `/implbyphase`: plan a todo list, then one subagent per phase. Each phase is small enough for one commit. Big phases split into subphases (e.g. `23a` data layer → `23b` reducer → `23c` UI).
+- `/implbyphase`: requires a verification skill and a worktree skill in the repo; otherwise it stops and asks. Plan a todo list, then one subagent per phase in its own worktree, parallel where independent. Each phase is small enough for one commit. Big phases split into subphases (e.g. `23a` data layer → `23b` reducer → `23c` UI).
 - Planning artifacts live in `plans/<NNN>-<slug>/` at repo root, never `.scratch/`. Zero-padded sequential number after the highest existing folder. Commit them. Use to-tickets skill.
 - Close each phase by updating the plan doc: status, what shipped, divergences from the plan, "next phase must-know notes". Record real divergences, not theater. Update the plan phase table with commit SHAs.
 - Close every effort with a two-axis review (Standards + Spec) of phases 1..N and a test-coverage check.
