@@ -96,17 +96,6 @@
           "OPENCODE_BROWSER_RUNTIME": "auto-update"
         }
       }
-    },
-    "pencil": {
-      "command": [
-        "/Applications/Pen.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
-        "--app",
-        "desktop",
-        "--agent",
-        "openCodeCLI"
-      ],
-      "enabled": true,
-      "type": "local"
     }
   },
   "model": "ollama-cloud/deepseek-v4.1-flash:1017#max",
@@ -344,12 +333,12 @@
     {
       "action": "shell",
       "effect": "allow",
-      "resource": "rm /Users/afifsohaili/Tiga/*"
+      "resource": "rm *Tiga/*"
     },
     {
       "action": "shell",
       "effect": "allow",
-      "resource": "rm /Users/afifsohaili/Projects/*"
+      "resource": "rm *Projects/*"
     },
     {
       "action": "shell",
