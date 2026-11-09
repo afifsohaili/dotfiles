@@ -9,3 +9,13 @@ These rules add to the global contract in `~/.config/opencode/AGENTS.md`. Where 
 - Conventional commits: `type(scope): subject`. Types: `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `perf`, `chore`, `ci`.
 - One purpose per commit. Tests with the fix. Docs separate (`docs(...)`).
 - Stage only intended files. Never `git add -A`. Never commit secrets, `.env*`, `node_modules`, or another agent's WIP files.
+
+## Cross-platform
+
+Every change must work on both macOS and Linux. Neither side is optional.
+
+- macOS runs zsh, Linux runs bash. Shell config must be portable, or gated per-OS.
+- Never hardcode `/Users/...` or `/home/...`. Use `$HOME` in shell, `{env:HOME}` in OpenCode JSON.
+- Gate OS-specific blocks (Homebrew paths, `plist`, `systemd`, app bundles) on `uname -s` or the file's existing OS switch.
+- Check a path exists on both platforms before adding it to config.
+
