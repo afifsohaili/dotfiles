@@ -85,6 +85,16 @@
           "execution": 120000
         },
         "type": "local"
+      },
+      "browse": {
+        "type": "local",
+        "command": [
+          "/Users/afifsohaili/.local/bin/browse",
+          "mcp"
+        ],
+        "environment": {
+          "OPENCODE_BROWSER_RUNTIME": "auto-update"
+        }
       }
     },
     "pencil": {
