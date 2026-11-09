@@ -89,7 +89,7 @@
       "browse": {
         "type": "local",
         "command": [
-          "/home/afifsohaili/.local/bin/browse",
+          "{env:HOME}/.local/bin/browse",
           "mcp"
         ],
         "environment": {
