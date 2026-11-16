@@ -641,6 +641,28 @@
       "skillFolderHash": "4de9b5a85cbdb7437411967de057223870f79579",
       "installedAt": "2026-11-04T02:46:24.506Z",
       "updatedAt": "2026-11-04T02:46:24.506Z"
+    },
+    "reverse-any-video": {
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "ref": "v0.9.27",
+      "skillPath": "skills/reverse-any-video/SKILL.md",
+      "skillFolderHash": "35e1913d27f08c05bd476106e12a52543763a387",
+      "pluginName": "core-skills",
+      "installedAt": "2026-11-10T01:43:00.828Z",
+      "updatedAt": "2026-11-10T01:43:00.828Z"
+    },
+    "style-sampling": {
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/heygen-com/hyperframes.git",
+      "ref": "v0.9.27",
+      "skillPath": "skills/style-sampling/SKILL.md",
+      "skillFolderHash": "b89770f7133094143f5ac337bd7a7514c12a9e4c",
+      "pluginName": "core-skills",
+      "installedAt": "2026-11-10T01:43:00.832Z",
+      "updatedAt": "2026-11-10T01:43:00.832Z"
     }
   },
   "dismissed": {
