@@ -14,8 +14,10 @@
 #   no dst          ->  mirror: the copy lands at the path it came from
 #   relative dst    ->  rsync's rule: cwd locally, home dir on the peer
 #
-# Auth: Mac -> g4 rides Tailscale SSH (tailnet identity, no keys). g4 -> Mac
-# rides macOS's OpenSSH with ~/.ssh/id_ed25519; install it once with
+# Auth: Mac -> g4 rides OpenSSH with ~/.ssh/id_ed25519_hex, a dedicated
+# no-passphrase key (Hex's capture router calls ssh with BatchMode=yes from a
+# GUI app, so an agent-unlocked key is not enough). g4 -> Mac rides macOS's
+# OpenSSH with ~/.ssh/id_ed25519; install it once with
 # `ssh-copy-id afifs-macbook-pro`.
 
 _hop_err() { printf 'hop: %s\n' "$1" >&2; }

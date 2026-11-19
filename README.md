@@ -177,7 +177,8 @@ does not need zsh at all.
 | mailpit | `yay -S mailpit-bin`; `omarchy/systemd/mailpit.service` linked to `~/.config/systemd/user/`, enabled manually with `systemctl --user enable --now mailpit.service` |
 | ntfy | `yay -S ntfysh-bin` (binary `/usr/bin/ntfy`; AUR `ntfy` is a different project); `omarchy/systemd/ntfy.service` + `config/ntfy/server.yml`; loopback `:15002` exposed with `tailscale serve --bg --http=15002`; auth required |
 | shared server | the managed background service owns `0.0.0.0:15001` on both platforms; `install.sh` provisions port and hostname in `~/.config/opencode/service.json`. Tailnet clients reach `http://<host>:15001` directly, no serve (`install.sh` removes any stale mapping for 15001) |
-| hop | `shell/shared/hop.sh`, auto-sourced on both platforms; `hop push`/`hop pull` over the tailnet. Mac->g4 rides Tailscale SSH identity; g4->Mac rides macOS Remote Login with `~/.ssh/id_ed25519` (`ssh-copy-id afifs-macbook-pro` once) |
+| hop | `shell/shared/hop.sh`, auto-sourced on both platforms; `hop push`/`hop pull` over the tailnet. Mac->g4 rides OpenSSH with `~/.ssh/id_ed25519_hex`; g4->Mac rides macOS Remote Login with `~/.ssh/id_ed25519` (`ssh-copy-id afifs-macbook-pro` once) |
+| hex annotate | `capture.folder` is `/var/tmp/opencode-hex` on both machines; `capture.routing.agentHost` is `g4`, so a send copies the bundle over SSH; g4 prunes old copies with `hex-captures-prune.timer` |
 
 ## OpenCode v2
 
@@ -269,12 +270,45 @@ Auth differs per direction, by design:
 
 | Direction | Transport | Credential |
 | --- | --- | --- |
-| Mac -> g4 | Tailscale SSH | tailnet identity, no keys |
+| Mac -> g4 | OpenSSH on g4 (`sshd`) | `~/.ssh/id_ed25519_hex`, a dedicated no-passphrase key |
 | g4 -> Mac | macOS Remote Login (OpenSSH) | `~/.ssh/id_ed25519`, installed once with `ssh-copy-id afifs-macbook-pro` |
 
-g4 advertises Tailscale SSH (`tailscale set --ssh`) and the tailnet ACL `ssh`
-rule is `accept` for own devices, so any tailnet client can `ssh afifsohailig4`
-without keys. The Mac cannot serve Tailscale SSH: the server component exists
+Mac -> g4 must work without an agent: Hex's capture router calls
+`ssh -o BatchMode=yes` from a GUI app, so a passphrase key cannot be unlocked.
+`id_ed25519_hex` is separate for that reason, and `Host g4 afifsohailig4` pins
+it on the Mac. Tailscale SSH is off on g4 (`sudo tailscale set --ssh=false`):
+it owned port 22 and its ACL rejected the Unix user, so plain sshd serves the
+tailnet. The Mac cannot serve Tailscale SSH anyway: the server component exists
 only on Linux and the Homebrew `tailscaled` variant, not the macOS GUI app.
 rsync interops both ways (GNU rsync on g4, Apple `openrsync` on the Mac);
 verified with files and directories in both directions.
+
+## Hex Annotate -> g4
+
+Annotate (Hex 3.x, Labs) writes one Scrawl bundle per capture. The bundle is
+produced on the Mac and copied to g4 when it is sent to a g4 session.
+
+| Piece | Value |
+| --- | --- |
+| `capture.folder` (Hex `settings.json`) | `/var/tmp/opencode-hex` on both machines |
+| `capture.routing.agentHost` | `g4` |
+| `capture.routing.agentOpencode` | `/home/afifsohaili/.opencode/bin/opencode` |
+| Mac `~/.ssh/config` | `Host g4 afifsohailig4`: user `afifsohaili`, `id_ed25519_hex`, `IdentitiesOnly yes` |
+| g4 `authorized_keys` | the Mac's `hex-agent` key |
+| g4 prune | `hex-captures-prune.timer`, daily, 30 days, skips `.pinned` |
+
+Send path: the router tars the light files to the same absolute path on g4
+(`mkdir -p` first), posts the prompt through `opencode api` over SSH, then
+streams video and `frames-full/` in the background behind a `.media-pending`
+marker. The prompt's `Recorded at` path resolves on g4 because both sides use
+the same path. `agentOpencode` must be absolute: non-interactive SSH has no
+`~/.opencode/bin` on `PATH`.
+
+`agentHost` is global. While it is set, the Mac's Send-to list shows g4's
+sessions and no local Mac sessions. Bundle names are unix milliseconds, so
+adding Hex on g4 later (same `capture.folder`, no `agentHost`) does not collide.
+
+There is no CLI key for `capture.folder`. Quit Hex, edit
+`~/Library/Application Support/hex/settings.json`, relaunch.
+`capture.routing` can be set with `hex settings set capture.routing '<json>'`,
+but that replaces the whole object.
