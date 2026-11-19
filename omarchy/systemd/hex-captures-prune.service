@@ -1,0 +1,9 @@
+[Unit]
+Description=Prune Hex capture copies older than 30 days
+Documentation=file://%h/Projects/dotfiles/omarchy/bin/hex-captures-prune
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/hex-captures-prune
+Nice=10
+IOSchedulingClass=idle

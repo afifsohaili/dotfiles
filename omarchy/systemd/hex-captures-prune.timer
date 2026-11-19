@@ -1,0 +1,11 @@
+[Unit]
+Description=Prune Hex capture copies daily
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=1d
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

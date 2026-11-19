@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Prune Hex/Scrawl bundles that another machine copied here over SSH (agentHost).
+# The producing machine keeps its own copies and applies the same retention rule;
+# this only removes the copies on this host.
+#
+# Pinned bundles stay, and so do bundles still receiving media: the sender marks
+# those with .media-pending until its background copy lands.
+set -euo pipefail
+
+root="${1:-/var/tmp/opencode-hex}"
+days="${2:-30}"
+
+[ -d "$root" ] || exit 0
+
+now=$(date +%s)
+for dir in "$root"/*.scrawl; do
+  [ -d "$dir" ] || continue
+  [ -e "$dir/.pinned" ] && continue
+  [ -e "$dir/.media-pending" ] && continue
+  [ -e "$dir/.media-sending" ] && continue
+
+  age_days=$(( (now - $(stat -c %Y "$dir")) / 86400 ))
+  if [ "$age_days" -ge "$days" ]; then
+    rm -rf -- "$dir"
+    echo "pruned $dir (${age_days}d)"
+  fi
+done
